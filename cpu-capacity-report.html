@@ -163,7 +163,7 @@
 
   <div class="abstract">
     <h2>Abstract</h2>
-    <p>Sizing hardware capacity for a complex, multi-tier transaction-processing system is a costly trade-off: over-provisioning wastes infrastructure budget, while under-provisioning drops billing transactions and exposes the operator to contractual fines for missed service levels. Sound sizing therefore requires weighing hardware cost estimates against the expected penalty cost of overload, which in turn requires knowing the probability of overload at a given load. This report presents a probabilistic method for that question: given a transaction rate, what is the probability that CPU utilization stays below the level required to meet service-level objectives? Transaction arrivals were modeled as a Poisson process, and CPU utilization conditional on load with a log-normal distribution derived from a multiplicative-overhead argument. Model parameters were learned from one month of peak-hour production measurements. The fitted model reproduced the observed utilization data and yields, for any utilization budget <i class="v">B</i> and candidate transaction rate <i class="v">N</i><sub>0</sub>, an estimate of <i class="v">P</i>(<i class="v">C</i> &lt; <i class="v">B</i> | <i class="v">N</i> = <i class="v">N</i><sub>0</sub>). A controlled load experiment at 70%, 100%, and 120% of nominal load supported the modeling choices and revealed a non-CPU bottleneck at extreme load. The method is delivered as an interactive spreadsheet tool for operations teams.</p>
+    <p>Sizing hardware capacity for a complex, multi-tier transaction-processing system is a costly trade-off: over-provisioning wastes infrastructure budget, while under-provisioning drops billing transactions and exposes the operator to contractual fines for missed service levels. Sound sizing therefore requires weighing hardware cost estimates against the expected penalty cost of overload, which in turn requires knowing the probability of overload at a given load. This report presents a probabilistic method for that question: given a transaction rate, what is the probability that CPU utilization stays below the level required to meet service-level objectives? Transaction arrivals were modeled as a Poisson process, and CPU utilization conditional on load with a log-normal distribution derived from a multiplicative-overhead argument. Model parameters were learned from one month of peak-hour production measurements. The fitted model reproduced the observed utilization data and yields, for any utilization budget <i class="v">B</i> and candidate transaction rate <i class="v">N</i><sub>0</sub>, an estimate of <i class="v">P</i>(<i class="v">C</i> &lt; <i class="v">B</i> | <i class="v">N</i> = <i class="v">N</i><sub>0</sub>). A controlled load experiment at 70%, 100%, and 120% of nominal load supported the modeling choices and revealed a non-CPU bottleneck at extreme load; a wider validation on 26 production servers over 30 days confirmed the log-normal fit inside every hour-of-day bin, and exposed that expected CPU grows exponentially, not linearly, with offered load. The capacity distribution is then composed with an event-arrival histogram and an empirical service-success curve into a decision-support model that returns expected availability and expected revenue under a tiered SLA contract. Applied on two large production deployments, the method supported hardware sizing decisions that avoided provisioning costs on the order of $10 M on the first engagement, and gave a quantitative comparison basis on the second. The method is delivered as an interactive spreadsheet tool for operations teams.</p>
   </div>
 
   <h2 class="sec"><span class="num">1</span>Problem statement</h2>
@@ -326,10 +326,209 @@
     <figcaption><b>Figure 2.</b> Application-tier mean CPU (solid) with ±3σ envelopes (dashed) under the two candidate models, fitted on the 70% and 100% load configurations and drawn on a common 0 to 100% scale. Model A's normal assumption produces a wide envelope, roughly 22% to 91% at 70% load; Model B's log-normal envelope is far tighter and narrows toward 100% load. The narrower variance estimate at 100% load partly reflects the shorter measurement window (4 hours at 100% versus 17 hours at 70%).</figcaption>
   </figure>
 
-  <h2 class="sec"><span class="num">6</span>Results and deliverable</h2>
-  <p>The fitted log-normal model explains the observed production data and supports direct computation of <i class="v">P</i>(<i class="v">C</i> &lt; <i class="v">B</i> | <i class="v">N</i> = <i class="v">N</i><sub>0</sub>) for any utilization budget <i class="v">B</i> and candidate rate <i class="v">N</i><sub>0</sub>. Inverting this relationship answers the original question: the maximum sustained transaction rate that keeps CPU under budget with confidence 1 − <i class="v">A</i>.</p>
-  <p>The method is packaged as an interactive spreadsheet tool: an operator enters a target transaction rate (transactions per second) and a CPU budget, and the tool returns the probability of exceeding that budget. This gives capacity planners a direct, quantitative basis for sizing decisions and headroom policies.</p>
+  <h2 class="sec"><span class="num">6</span>Production validation at scale</h2>
+  <p>The controlled experiment supports the modeling choice on a small number of load levels; a wider validation was carried out on a production billing platform. Data were collected from 26 rating and balancing servers over 30 days, spanning four event classes (voice, messaging, data, and replenishment). For every hour-of-day bin, per-server, we retained about 30 event totals (one per day) and about 720 five-second CPU samples, totalling roughly 21,600 CPU measurements per bin. In every bin the empirical distribution of log(CPU) is close to normal, so <i class="v">C</i> follows a log-normal distribution as in Section 3.</p>
+  <p>Under this fit, an operational capacity ceiling is defined as</p>
+  <p class="eq"><i class="v">C</i><sub>top</sub> = exp{ &nbsp;&mu;<sub>log C</sub> + 3&nbsp;&sigma;<sub>log C</sub>&nbsp; }</p>
+  <p>with the mean and standard deviation of log <i class="v">C</i> computed inside the bin. By the three-sigma rule this ceiling covers <i class="v">C</i> with 99.8% probability. The exceedance function <i class="v">P</i>(<i class="v">C</i> &gt; <i class="v">c</i>) then follows directly:</p>
+  <figure>
+    <div class="panels">
+      <div>
+        <p class="panel-title">Empirical vs. fitted log-normal</p>
+        <svg viewBox="0 0 320 260" role="img" aria-label="Empirical cumulative frequency of log CPU overlaid on a fitted normal cumulative distribution; the two curves overlap almost perfectly across the range 3.7 to 4.6.">
+          <g stroke="var(--grid)" stroke-width="1">
+            <line x1="45" y1="220" x2="300" y2="220"/>
+            <line x1="45" y1="169" x2="300" y2="169"/>
+            <line x1="45" y1="118" x2="300" y2="118"/>
+            <line x1="45" y1="67" x2="300" y2="67"/>
+            <line x1="45" y1="16" x2="300" y2="16"/>
+          </g>
+          <g text-anchor="end">
+            <text x="39" y="224">0</text>
+            <text x="39" y="173">0.25</text>
+            <text x="39" y="122">0.5</text>
+            <text x="39" y="71">0.75</text>
+            <text x="39" y="20">1</text>
+          </g>
+          <g text-anchor="middle">
+            <text x="45" y="238">3.7</text>
+            <text x="172" y="238">4.15</text>
+            <text x="300" y="238">4.6</text>
+            <text x="172" y="253" fill="var(--ink-3)">log(CPU%)</text>
+          </g>
+          <path fill="none" stroke="var(--s1)" stroke-width="2" d="M45,218 C 90,215 120,190 150,140 S 210,40 260,20 L300,18"/>
+          <g fill="var(--s3)">
+            <circle cx="60" cy="217" r="2.2"/><circle cx="80" cy="214" r="2.2"/><circle cx="100" cy="207" r="2.2"/><circle cx="120" cy="192" r="2.2"/><circle cx="140" cy="163" r="2.2"/><circle cx="160" cy="126" r="2.2"/><circle cx="180" cy="88" r="2.2"/><circle cx="200" cy="60" r="2.2"/><circle cx="220" cy="42" r="2.2"/><circle cx="240" cy="30" r="2.2"/><circle cx="260" cy="22" r="2.2"/><circle cx="280" cy="19" r="2.2"/>
+          </g>
+        </svg>
+      </div>
+      <div>
+        <p class="panel-title">Exceedance function <i class="v">P</i>(<i class="v">C</i> &gt; <i class="v">c</i>)</p>
+        <svg viewBox="0 0 320 260" role="img" aria-label="Exceedance function P(C > c) versus CPU percent, dropping from about 1 at 45 percent to near zero at 85 percent, matched by the complementary cumulative curve.">
+          <g stroke="var(--grid)" stroke-width="1">
+            <line x1="45" y1="220" x2="300" y2="220"/>
+            <line x1="45" y1="169" x2="300" y2="169"/>
+            <line x1="45" y1="118" x2="300" y2="118"/>
+            <line x1="45" y1="67" x2="300" y2="67"/>
+            <line x1="45" y1="16" x2="300" y2="16"/>
+          </g>
+          <g text-anchor="end">
+            <text x="39" y="224">0</text>
+            <text x="39" y="122">0.5</text>
+            <text x="39" y="20">1</text>
+          </g>
+          <g text-anchor="middle">
+            <text x="45" y="238">45%</text>
+            <text x="172" y="238">70%</text>
+            <text x="300" y="238">100%</text>
+            <text x="172" y="253" fill="var(--ink-3)">CPU utilization</text>
+          </g>
+          <path fill="none" stroke="var(--s3)" stroke-width="2" d="M45,20 C 80,22 105,30 130,60 S 175,190 210,213 L300,218"/>
+          <path fill="none" stroke="var(--s1)" stroke-width="2" d="M45,218 C 80,216 105,210 130,180 S 175,50 210,25 L300,20"/>
+          <g class="dlabel">
+            <text x="55" y="35" fill="var(--s3)">P(C&gt;c)</text>
+            <text x="260" y="38" fill="var(--s1)">CDF</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+    <figcaption><b>Figure 3.</b> Left: for one representative server-hour, the empirical cumulative frequency of log(CPU%) (points) tracks the fitted normal CDF (line) closely across the range 3.7 to 4.6. Right: the resulting CPU CDF and its complement, the exceedance function <i class="v">P</i>(<i class="v">C</i> &gt; <i class="v">c</i>), used to compute the operational ceiling <i class="v">C</i><sub>top</sub>.</figcaption>
+  </figure>
 
-  <h2 class="sec"><span class="num">7</span>Scope</h2>
-  <p>The model is fitted per host and per workload; parameters α and β are re-learned for each deployment from about a month of peak-hour measurements. It describes the regime where CPU is the binding resource; the load experiment places the boundary of that regime between 100% and 120% of nominal load for the system studied, beyond which capacity is governed by network or disk I/O and a different model applies.</p>
+  <h2 class="sec"><span class="num">7</span>How the model parameters scale with load</h2>
+  <p>Fitting the log-normal per hour-of-day bin on one heavily-loaded server exposes how μ<sub>log C</sub> and σ<sub>log C</sub> depend on offered load, expressed as the Poisson intensity λ of transactions per 5-second interval (equivalently, average events per second per core):</p>
+  <figure>
+    <svg viewBox="0 0 640 280" role="img" aria-label="Two panels: mean of log CPU rises with load, standard deviation of log CPU falls with load, across roughly seven to twenty-eight events per five-second interval.">
+      <g transform="translate(0,0)">
+        <g stroke="var(--grid)" stroke-width="1">
+          <line x1="50" y1="230" x2="290" y2="230"/>
+          <line x1="50" y1="170" x2="290" y2="170"/>
+          <line x1="50" y1="110" x2="290" y2="110"/>
+          <line x1="50" y1="50" x2="290" y2="50"/>
+        </g>
+        <g text-anchor="end">
+          <text x="44" y="234">2.4</text>
+          <text x="44" y="174">2.9</text>
+          <text x="44" y="114">3.4</text>
+          <text x="44" y="54">3.9</text>
+        </g>
+        <g text-anchor="middle">
+          <text x="50" y="248">7</text>
+          <text x="170" y="248">17</text>
+          <text x="290" y="248">28</text>
+          <text x="170" y="263" fill="var(--ink-3)">λ (events per 5 s)</text>
+          <text x="170" y="20" class="dlabel" fill="var(--ink)">mean of log CPU</text>
+        </g>
+        <g fill="var(--s1)" stroke="var(--paper)" stroke-width="1.2">
+          <circle cx="55" cy="223" r="2.6"/><circle cx="57" cy="216" r="2.6"/><circle cx="79" cy="203" r="2.6"/><circle cx="88" cy="201" r="2.6"/><circle cx="115" cy="180" r="2.6"/><circle cx="160" cy="152" r="2.6"/><circle cx="163" cy="145" r="2.6"/><circle cx="200" cy="125" r="2.6"/><circle cx="220" cy="110" r="2.6"/><circle cx="238" cy="96" r="2.6"/><circle cx="240" cy="97" r="2.6"/><circle cx="252" cy="87" r="2.6"/><circle cx="260" cy="82" r="2.6"/><circle cx="264" cy="80" r="2.6"/><circle cx="278" cy="74" r="2.6"/><circle cx="279" cy="73" r="2.6"/><circle cx="279" cy="72" r="2.6"/><circle cx="280" cy="70" r="2.6"/><circle cx="281" cy="70" r="2.6"/>
+        </g>
+      </g>
+      <g transform="translate(320,0)">
+        <g stroke="var(--grid)" stroke-width="1">
+          <line x1="50" y1="230" x2="290" y2="230"/>
+          <line x1="50" y1="170" x2="290" y2="170"/>
+          <line x1="50" y1="110" x2="290" y2="110"/>
+          <line x1="50" y1="50" x2="290" y2="50"/>
+        </g>
+        <g text-anchor="end">
+          <text x="44" y="234">0.10</text>
+          <text x="44" y="174">0.20</text>
+          <text x="44" y="114">0.30</text>
+          <text x="44" y="54">0.40</text>
+        </g>
+        <g text-anchor="middle">
+          <text x="50" y="248">7</text>
+          <text x="170" y="248">17</text>
+          <text x="290" y="248">28</text>
+          <text x="170" y="263" fill="var(--ink-3)">λ (events per 5 s)</text>
+          <text x="170" y="20" class="dlabel" fill="var(--ink)">stdev of log CPU</text>
+        </g>
+        <g fill="var(--s3)" stroke="var(--paper)" stroke-width="1.2">
+          <circle cx="55" cy="67" r="2.6"/><circle cx="57" cy="67" r="2.6"/><circle cx="79" cy="77" r="2.6"/><circle cx="88" cy="84" r="2.6"/><circle cx="115" cy="115" r="2.6"/><circle cx="160" cy="139" r="2.6"/><circle cx="163" cy="138" r="2.6"/><circle cx="200" cy="167" r="2.6"/><circle cx="220" cy="171" r="2.6"/><circle cx="238" cy="178" r="2.6"/><circle cx="240" cy="157" r="2.6"/><circle cx="252" cy="183" r="2.6"/><circle cx="260" cy="188" r="2.6"/><circle cx="264" cy="192" r="2.6"/><circle cx="278" cy="205" r="2.6"/><circle cx="279" cy="208" r="2.6"/><circle cx="279" cy="207" r="2.6"/><circle cx="280" cy="205" r="2.6"/><circle cx="281" cy="205" r="2.6"/>
+        </g>
+      </g>
+    </svg>
+    <figcaption><b>Figure 4.</b> Fitted log-normal parameters versus offered load, one point per hour-of-day bin for a representative server. Mean log CPU rises from about 2.45 at λ = 7 to about 3.73 at λ = 28, which corresponds to average CPU utilization growing from roughly 12% to 42%; the standard deviation of log CPU falls from about 0.37 to 0.14. The mean-in-log-CPU rising roughly linearly with λ is consistent with an exponential (not linear) growth of expected CPU with offered load, which matters for long-horizon capacity forecasts.</figcaption>
+  </figure>
+
+  <h2 class="sec"><span class="num">8</span>From capacity to economics: decision-support model</h2>
+  <p>The capacity model is a probability distribution over CPU given load; a sizing decision, however, is made against revenue and penalties. To bridge the two we combine three probabilities, each estimated from data or an operating policy:</p>
+  <ul>
+    <li><i class="v">P<sub>e</sub></i>(<i class="v">E</i> = <i class="v">e</i> | <i class="v">T</i> = <i class="v">t</i>) — probability of <i class="v">e</i> events arriving in the time window at hour <i class="v">t</i>-of-day (event-load histogram);</li>
+    <li><i class="v">P<sub>c</sub></i>(<i class="v">C</i> = <i class="v">c</i> | <i class="v">E</i> = <i class="v">e</i>) — probability of CPU utilization <i class="v">c</i> given <i class="v">e</i> events (the log-normal capacity model of Sections 3 and 6);</li>
+    <li><i class="v">P<sub>s</sub></i>(<i class="v">C</i> = <i class="v">c</i>) — probability that an event arriving while CPU is at <i class="v">c</i> is processed within the SLA (a service-success curve).</li>
+  </ul>
+  <p>Summed over the joint distribution, these give the expected number of successful and failed events per server, and thence an expected availability ratio and an expected revenue:</p>
+  <p class="eq"><i class="v">S</i> = Σ<sub><i class="v">c,e,t</i></sub> <i class="v">P<sub>s</sub></i>(<i class="v">C</i>=<i class="v">c</i>)&nbsp;<i class="v">P<sub>e</sub></i>(<i class="v">E</i>=<i class="v">e</i>|<i class="v">T</i>=<i class="v">t</i>)&nbsp;<i class="v">P<sub>c</sub></i>(<i class="v">C</i>=<i class="v">c</i>|<i class="v">E</i>=<i class="v">e</i>)</p>
+  <p class="eq"><i class="v">A</i> = <i class="v">S</i> / (<i class="v">S</i> + <i class="v">F</i>) &nbsp;·&nbsp; <i class="v">R</i> = RevenueShare(<i class="v">A</i>) · ARPE · <i class="v">S</i> − Fine(<i class="v">A</i>)</p>
+  <p>where ARPE is the operator's average revenue per event and the piecewise functions RevenueShare(·) and Fine(·) encode the contract's tiered SLA schedule. Overload feeds back into revenue through <i class="v">P<sub>s</sub></i>, which was estimated on the same production data as a sharp threshold:</p>
+  <figure>
+    <svg viewBox="0 0 640 260" role="img" aria-label="Step-like curve of single-event failure probability rising from about zero at 90 percent CPU to one at 100 percent CPU, with a steep rise between 90 and 92 percent.">
+      <g stroke="var(--grid)" stroke-width="1">
+        <line x1="60" y1="220" x2="600" y2="220"/>
+        <line x1="60" y1="170" x2="600" y2="170"/>
+        <line x1="60" y1="120" x2="600" y2="120"/>
+        <line x1="60" y1="70" x2="600" y2="70"/>
+        <line x1="60" y1="20" x2="600" y2="20"/>
+      </g>
+      <g text-anchor="end">
+        <text x="54" y="224">0</text>
+        <text x="54" y="174">0.25</text>
+        <text x="54" y="124">0.5</text>
+        <text x="54" y="74">0.75</text>
+        <text x="54" y="24">1</text>
+      </g>
+      <g text-anchor="middle">
+        <text x="60" y="240">90%</text>
+        <text x="114" y="240">91%</text>
+        <text x="168" y="240">92%</text>
+        <text x="222" y="240">93%</text>
+        <text x="276" y="240">94%</text>
+        <text x="330" y="240">95%</text>
+        <text x="384" y="240">96%</text>
+        <text x="438" y="240">97%</text>
+        <text x="492" y="240">98%</text>
+        <text x="546" y="240">99%</text>
+        <text x="600" y="240">100%</text>
+        <text x="330" y="255" fill="var(--ink-3)">CPU utilization</text>
+      </g>
+      <polyline fill="none" stroke="var(--s3)" stroke-width="2" stroke-linejoin="round" points="60,220 114,169.8 168,120 222,100 276,80 330,60 384,52 438,44 492,36 546,28 600,20"/>
+      <g fill="var(--s3)" stroke="var(--paper)" stroke-width="1.5">
+        <circle cx="60" cy="220" r="3.5"><title>90% CPU · 0.1% failure</title></circle>
+        <circle cx="114" cy="169.8" r="3.5"><title>91% CPU · 25.1% failure</title></circle>
+        <circle cx="168" cy="120" r="3.5"><title>92% CPU · 50% failure</title></circle>
+        <circle cx="222" cy="100" r="3.5"><title>93% CPU · 60% failure</title></circle>
+        <circle cx="276" cy="80" r="3.5"><title>94% CPU · 70% failure</title></circle>
+        <circle cx="330" cy="60" r="3.5"><title>95% CPU · 80% failure</title></circle>
+        <circle cx="384" cy="52" r="3.5"><title>96% CPU · 84% failure</title></circle>
+        <circle cx="438" cy="44" r="3.5"><title>97% CPU · 88% failure</title></circle>
+        <circle cx="492" cy="36" r="3.5"><title>98% CPU · 92% failure</title></circle>
+        <circle cx="546" cy="28" r="3.5"><title>99% CPU · 96% failure</title></circle>
+        <circle cx="600" cy="20" r="3.5"><title>100% CPU · 100% failure</title></circle>
+      </g>
+    </svg>
+    <figcaption><b>Figure 5.</b> Single-event failure probability 1 − <i class="v">P<sub>s</sub></i>(<i class="v">C</i>) as a function of instantaneous CPU utilization. Below ~90% CPU, essentially all events complete within SLA; the curve rises sharply between 90% and 95% (50% failure at 92%, 80% at 95%), and every event fails once CPU saturates. The narrow transition band is what makes small changes in mean CPU translate into large swings in expected revenue near the operating point.</figcaption>
+  </figure>
+
+  <h2 class="sec"><span class="num">9</span>Worked example: annual sizing under contract</h2>
+  <p>To illustrate, we apply the decision-support model to a 20-server fleet handling roughly 386 billion events per year, on a contract paying $2 × 10<sup>−4</sup> per event, with a $1 M annual fine below 99% availability and a two-tier revenue share above it:</p>
+  <table>
+    <thead>
+      <tr><th>Availability tier</th><th class="n">Revenue share</th><th class="n">Fine</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>&lt; 99%</td><td class="n">0%</td><td class="n">$1,000,000</td></tr>
+      <tr><td>99% – 100%</td><td class="n">2%</td><td class="n">—</td></tr>
+      <tr><td>100% (fully met)</td><td class="n">4%</td><td class="n">—</td></tr>
+    </tbody>
+  </table>
+  <p>The event histogram varies from about 0.2 M events per hour off-peak to 4.7 M at the peak hour (19:00). Summing hour-by-hour, the model predicts an expected 366 successful billing dollars per server per day, or approximately $132 K per server-year and $2.64 M in expected revenue from the fleet, with residual failure probability concentrated in the two peak hours where CPU brushes 90%.</p>
+  <p>A quarterly variant of the same model was used to plan hardware growth on a mixed fleet of two server generations. Given about 5% quarterly growth in event volume and 3% growth in operator revenues, the model projects the peak-hour CPU of the older server generation from 57% at baseline to 60% by year-end. Under the same SLA contract, availability remains above 99.9% only if the fleet of the older generation grows from 15 to 18 units over four quarters. The purchase schedule is set by the first quarter in which the predicted CPU crosses the sizing threshold, rather than by a fixed headroom heuristic.</p>
+
+  <h2 class="sec"><span class="num">10</span>Deployment outcomes</h2>
+  <p>The method was applied on two large service-provider deployments. On the first, it drove the hardware sizing analysis for a managed-services engagement and, by replacing a linear extrapolation with the log-normal-based ceiling, supported a reported saving on the order of $10 M in provisioned hardware over the planning horizon. On the second, it was used internally to compare pre-production soak-test results on a new site with measurements from an existing production site, giving a quantitative basis for accepting or rejecting the new site's capacity claims.</p>
+  <p>The method is delivered as an interactive spreadsheet: an operator enters a target transaction rate and a CPU budget, and the tool returns the probability of exceeding that budget and the corresponding expected-revenue impact under the contract's SLA tiers.</p>
+
+  <h2 class="sec"><span class="num">11</span>Scope</h2>
+  <p>Parameters α and β are re-learned for each host and workload from about a month of peak-hour measurements; μ<sub>log C</sub> and σ<sub>log C</sub> are re-estimated per hour-of-day bin where finer resolution matters. The capacity model describes the regime where CPU is the binding resource; the controlled experiment places the boundary of that regime between 100% and 120% of nominal load for the system studied, beyond which capacity is governed by network or disk I/O and a different model applies. The decision-support model in Sections 8 and 9 assumes an SLA contract whose revenue-share and fine schedule can be expressed as a piecewise function of availability; other contract structures can be handled by substituting RevenueShare(·) and Fine(·) accordingly.</p>
 </article>
