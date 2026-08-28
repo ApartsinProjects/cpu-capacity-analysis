@@ -1,0 +1,46 @@
+{
+  "5s": {
+    "label": "5s",
+    "window_sec": 5.0,
+    "lam_min": 2.0833333333333335,
+    "lam_max": 34.72222222222222,
+    "sig_min": 0.19859126117417192,
+    "sig_max": 0.2028349011501638,
+    "sig_direction": "flat",
+    "formA_paper": {
+      "gamma": -0.00070881286788906,
+      "delta": 0.20043042164193642,
+      "R2": 0.013302480925986182,
+      "matches_prediction": false
+    },
+    "formB_derivation": {
+      "alpha_hat": 0.002250031782048707,
+      "sigma_mult_hat": 0.19999286999735327,
+      "R2": 0.021262637305531462,
+      "alpha_true": 0.003,
+      "sigma_mult_true": 0.2
+    }
+  },
+  "5min": {
+    "label": "5min",
+    "window_sec": 300.0,
+    "lam_min": 125.0,
+    "lam_max": 2083.3333333333335,
+    "sig_min": 0.19899687067947794,
+    "sig_max": 0.2478373035838049,
+    "sig_direction": "flat",
+    "formA_paper": {
+      "gamma": -0.47088082542673076,
+      "delta": 0.23822102276791468,
+      "R2": 0.4287386505637055,
+      "matches_prediction": false
+    },
+    "formB_derivation": {
+      "alpha_hat": 0.002751666954577926,
+      "sigma_mult_hat": 0.2010976101615137,
+      "R2": 0.6193792444566648,
+      "alpha_true": 0.003,
+      "sigma_mult_true": 0.2
+    }
+  }
+}
