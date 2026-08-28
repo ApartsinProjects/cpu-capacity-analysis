@@ -1,0 +1,46 @@
+{
+  "n_vms": 221,
+  "n_bins": 5173,
+  "lognorm_ctop": {
+    "mean_coverage": 0.9766639319703067,
+    "share_at_target": 0.7316837425091823,
+    "median_ceiling_pct": 3.1632243519673313,
+    "median_rel_cost": 0.319944538081278,
+    "n_valid": 5173
+  },
+  "empirical_p998": {
+    "mean_coverage": 0.9716260257185461,
+    "share_at_target": 0.6920549004446163,
+    "median_ceiling_pct": 4.130933333333322,
+    "median_rel_cost": 0.08997289972899764,
+    "n_valid": 5173
+  },
+  "gauss_meanksd": {
+    "mean_coverage": 0.9663569701018765,
+    "share_at_target": 0.6412139957471487,
+    "median_ceiling_pct": 3.0418889596138743,
+    "median_rel_cost": 0.13111327905225806,
+    "n_valid": 5173
+  },
+  "rolling_max": {
+    "mean_coverage": 0.9766534965231065,
+    "share_at_target": 0.7568142277208583,
+    "median_ceiling_pct": 4.5,
+    "median_rel_cost": 0.12499999999999974,
+    "n_valid": 5173
+  },
+  "ml_gbm_p998": {
+    "mean_coverage": 0.9374451140872254,
+    "share_at_target": 0.4465493910690122,
+    "median_ceiling_pct": 3.278376597737879,
+    "median_rel_cost": 0.010083322966719056,
+    "n_valid": 4687
+  },
+  "ewmq_p998": {
+    "mean_coverage": 0.7842303833470219,
+    "share_at_target": 0.16373477672530445,
+    "median_ceiling_pct": 1.9727312216300497,
+    "median_rel_cost": -0.12998248842306695,
+    "n_valid": 5173
+  }
+}

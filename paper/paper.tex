@@ -61,22 +61,28 @@ claim on two independent public traces (Bitbrains GWA-T-12 fastStorage, 1\,250
 VMs; Bitbrains Rnd, roughly 500 VMs) totalling \NBinsAll{} hour-of-day
 distribution bins, and find that log-normal is the best-fitting family among
 \{normal, gamma, Weibull, log-normal\} by AIC in \LogNormShareAll{}\% of
-bins. We derive the parameter-scaling law that follows from the
+bins (95\% cluster-bootstrap CI [\LogNormShareAllCiLo, \LogNormShareAllCiHi]).
+We derive the parameter-scaling law that follows from the
 multiplicative-overhead argument (a monotone-increasing
 $\sigma_{\log C}(\lambda) = \sqrt{\alpha^2\lambda + \sigma_\varepsilon^2}$
 that corrects an earlier decreasing form in the original 2011 report) and
 fit it per VM. Direction matches: $\sigma$ increases with $\lambda$ on 105
 of 106 well-fitting VMs, and the load-response coefficient
 $\hat\alpha_\sigma$ rank-correlates with $\hat\alpha_\mu$ from the mean
-clause at Spearman 0.82 to 0.94. Magnitude does not: $\hat\alpha_\sigma$
-is systematically nine times larger than $\hat\alpha_\mu$, a demand-
-fluctuation excess that variance decomposition attributes to sub-hour
-burstiness (65\% of the variance increase) and day-to-day level shifts
-(35\%). We evaluate the resulting sizing ceiling against five baselines
-(empirical percentile, mean-plus-$k\sigma$, rolling maximum, quantile
-gradient boosting, exponentially weighted moving quantile) and find the
-log-normal ceiling attains the highest share-at-target coverage at a
-competitive predicted ceiling. Finally, we recast the decision-support layer with
+clause at Spearman \ScalFsSpearman{} on fastStorage
+([\ScalFsSpearmanCiLo, \ScalFsSpearmanCiHi]) and \ScalRnSpearman{} on Rnd
+([\ScalRnSpearmanCiLo, \ScalRnSpearmanCiHi]). Magnitude does not:
+$\hat\alpha_\sigma$ is systematically \ScalFsRatio-\ScalRnRatio{} times
+larger than $\hat\alpha_\mu$, a demand-fluctuation excess that variance
+decomposition attributes to sub-hour burstiness (65\% of the increase)
+and day-to-day level shifts (35\%). We evaluate the resulting sizing
+ceiling on a unified panel against five baselines (empirical percentile,
+mean-plus-$k\sigma$, rolling maximum, quantile gradient boosting,
+exponentially weighted moving quantile), and find the log-normal ceiling
+and the rolling-maximum baseline are the two coverage leaders (95\% CIs
+overlap on both traces), while log-normal wins the AWS SLA revenue
+metric cleanly on fastStorage and ties rolling-max on Rnd; both dominate
+the remaining four baselines with non-overlapping CIs. Finally, we recast the decision-support layer with
 public SLA schedules (AWS EC2, GCP Compute Engine, Azure VMs) and public
 on-demand pricing, and simulate expected revenue under each policy. Code,
 preprocessing scripts, and a reproducibility container are released with the
@@ -526,6 +532,14 @@ predicted ceiling; target $\geq 99.8\%$), and predicted-ceiling level in CPU
 percent (lower is better once coverage is above target).
 Table~\ref{tab:sizing} reports the pooled results.
 
+Table~\ref{tab:sizing} reports pooled results across a unified panel:
+one script, one VM sample per trace, one bin filter, all six ceilings
+co-computed per bin (\PanelFsNVms{} / \PanelRnNVms{} VMs;
+\PanelFsNBins{} / \PanelRnNBins{} bins). Every row is scored on the same
+bins with identical train/test splits, so the comparisons are
+apples-to-apples. Share-at-target is bootstrapped over VMs
+(cluster resampling, $B=2000$); 95\% CIs are given in brackets.
+
 \begin{table}[t]
   \centering
   \small
@@ -533,47 +547,48 @@ Table~\ref{tab:sizing} reports the pooled results.
     \toprule
     & \multicolumn{2}{c}{fastStorage} & \multicolumn{2}{c}{Rnd} \\
     \cmidrule(lr){2-3}\cmidrule(lr){4-5}
-    Method              & Coverage & Ceiling (\%) & Coverage & Ceiling (\%) \\
+    Method              & Share-at-target (\%) & Ceiling (\%) & Share-at-target (\%) & Ceiling (\%) \\
     \midrule
-    lognorm\_ctop       & \SzFsLNMeanCov{}\% & \SzFsLNMedCeiling{} & \SzLNMeanCov{}\% & \SzLNMedCeiling{} \\
-    empirical\_p998     & \SzFsEPMeanCov{}\% & \SzFsEPMedCeiling{} & \SzEPMeanCov{}\% & \SzEPMedCeiling{} \\
-    gauss\_meanksd      & \SzFsGAMeanCov{}\% & \SzFsGAMedCeiling{} & \SzGAMeanCov{}\% & \SzGAMedCeiling{} \\
-    rolling\_max        & \SzFsRMMeanCov{}\% & \SzFsRMMedCeiling{} & \SzRMMeanCov{}\% & \SzRMMedCeiling{} \\
-    ml\_gbm\_p998       & \SzFsMLGBMeanCov{}\% & \SzFsMLGBMedCeiling{} & \SzRnMLGBMeanCov{}\% & \SzRnMLGBMedCeiling{} \\
-    ewmq\_p998          & \SzFsEWMQMeanCov{}\% & \SzFsEWMQMedCeiling{} & \SzRnEWMQMeanCov{}\% & \SzRnEWMQMedCeiling{} \\
+    lognorm\_ctop       & \UFsLNShare{} [\UFsLNShareCiLo, \UFsLNShareCiHi] & \UFsLNCeiling  & \URnLNShare{} [\URnLNShareCiLo, \URnLNShareCiHi] & \URnLNCeiling  \\
+    rolling\_max        & \UFsRMShare{} [\UFsRMShareCiLo, \UFsRMShareCiHi] & \UFsRMCeiling  & \URnRMShare{} [\URnRMShareCiLo, \URnRMShareCiHi] & \URnRMCeiling  \\
+    empirical\_p998     & \UFsEPShare{} [\UFsEPShareCiLo, \UFsEPShareCiHi] & \UFsEPCeiling  & \URnEPShare{} [\URnEPShareCiLo, \URnEPShareCiHi] & \URnEPCeiling  \\
+    gauss\_meanksd      & \UFsGAShare{} [\UFsGAShareCiLo, \UFsGAShareCiHi] & \UFsGACeiling  & \URnGAShare{} [\URnGAShareCiLo, \URnGAShareCiHi] & \URnGACeiling  \\
+    ml\_gbm\_p998       & \UFsMLGBShare{} [\UFsMLGBShareCiLo, \UFsMLGBShareCiHi] & \UFsMLGBCeiling & \URnMLGBShare{} [\URnMLGBShareCiLo, \URnMLGBShareCiHi] & \URnMLGBCeiling \\
+    ewmq\_p998          & \UFsEWMQShare{} [\UFsEWMQShareCiLo, \UFsEWMQShareCiHi] & \UFsEWMQCeiling & \URnEWMQShare{} [\URnEWMQShareCiLo, \URnEWMQShareCiHi] & \URnEWMQCeiling \\
     \bottomrule
   \end{tabular}
-  \caption{Sizing accuracy on held-out data (last 6 days). Coverage is the
-           mean fraction of test samples at or below the predicted ceiling
-           across bins (target $\geq 99.8\%$). Ceiling is the median
-           predicted ceiling in CPU\%.}
+  \caption{Sizing accuracy on the unified evaluation panel (last 6 days
+    held out per VM). Share-at-target is the fraction of bins where the
+    predicted ceiling covers $\geq 99.8\%$ of test samples, with 95\%
+    cluster-bootstrap CI over VMs. Ceiling is the median predicted
+    ceiling in CPU\%.}
   \label{tab:sizing}
 \end{table}
 
-On both traces, \texttt{lognorm\_ctop} attains the highest coverage among
-methods with a comparable ceiling: on fastStorage it hits the 99.8\% target
-in \SzFsLNShareTarget{}\% of bins vs.\ \SzFsGAShareTarget{}\% for the
-Gaussian assumption, at a lower median ceiling than \texttt{rolling\_max}
-(\SzFsLNMedCeiling{} vs.\ \SzFsRMMedCeiling{}). \texttt{gauss\_meanksd}
-achieves the lowest median ceiling among the physics-based methods but
-under-covers, which is exactly the failure mode a symmetric assumption
-predicts on right-skewed data. \texttt{rolling\_max} covers well but at a
-large cost premium (median relative over-provisioning
-\SzFsRMMedRelCost{}\% on fastStorage, \SzRMMedRelCost{}\% on Rnd) that
-would compound across a large fleet.
+The picture is more nuanced than a single-method win. On fastStorage,
+\texttt{lognorm\_ctop} hits the target in \UFsLNShare{}\% of bins,
+\texttt{rolling\_max} in \UFsRMShare{}\%; the two CIs overlap, so the lead
+is real but not statistically significant on this sample. On Rnd,
+\texttt{rolling\_max} slightly out-covers \texttt{lognorm\_ctop}
+(\URnRMShare{}\% vs.\ \URnLNShare{}\%), again with overlapping CIs. The
+\texttt{lognorm\_ctop} advantage over the remaining physics-based
+baselines (\texttt{empirical\_p998}, \texttt{gauss\_meanksd}) is clean and
+CI-separated on both traces. Both data-driven baselines are dominated on
+coverage: quantile GBM hits target in only \UFsMLGBShare{}\% and
+\URnMLGBShare{}\% of bins, EWMQ in \UFsEWMQShare{}\% and \URnEWMQShare{}\%.
 
-The two data-driven baselines are both dominated on coverage. Quantile GBM
-picks lower ceilings than \texttt{lognorm\_ctop} on both traces but reaches
-the target confidence in only \SzFsMLGBShareTarget{}\% (fastStorage) and
-\SzRnMLGBShareTarget{}\% (Rnd) of bins, versus \SzFsLNShareTarget{}\% and
-\SzLNShareTarget{}\% for the parametric ceiling. The failure mode is the
-standard one for quantile regression at extreme percentiles: with tens of
-per-day samples per bin, the empirical count in the tail is too small for
-the learner to fit the 99.8th percentile without smoothing it downward
-across days. EWMQ is worse still (\SzFsEWMQShareTarget{}\% at target). The
-physical scaling of the log-normal ceiling, whose tail behaviour is set by
-the whole fitted distribution rather than the sparse tail alone, is the
-mechanism that closes this gap.
+The story is a coverage-vs-ceiling trade-off. \texttt{lognorm\_ctop} and
+\texttt{rolling\_max} are the top two coverage methods, with
+\texttt{lognorm\_ctop} carrying a lower median ceiling on both traces
+(\UFsLNCeiling{} vs.\ \UFsRMCeiling{} on fastStorage,
+\URnLNCeiling{} vs.\ \URnRMCeiling{} on Rnd) but a higher median relative
+over-provisioning versus the actual test 99th percentile
+(\UFsLNRelCost{}\% vs.\ \UFsRMRelCost{}\% on fastStorage,
+\URnLNRelCost{}\% vs.\ \URnRMRelCost{}\% on Rnd). The physics-based
+baselines that beat log-normal on ceiling under-cover; the data-driven
+baselines that beat it on relative cost badly under-cover. The
+coverage-priced decision layer of Section~\ref{sec:economics} arbitrates
+this trade-off in dollars.
 
 \section{SLA-Aware Sizing with Public Pricing}
 \label{sec:economics}
@@ -612,29 +627,40 @@ dollar of billed revenue; $0.90$ means the SLA schedule reclaims $10\%$).
     \cmidrule(lr){2-4}\cmidrule(lr){5-7}
     Method              & AWS        & GCP         & Azure       & AWS        & GCP         & Azure \\
     \midrule
-    lognorm\_ctop       & \SlaFsLNAWSNet{}\% & \SlaFsLNGCPNet{}\% & \SlaFsLNAzureNet{}\% & \SlaRnLNAWSNet{}\% & \SlaRnLNGCPNet{}\% & \SlaRnLNAzureNet{}\% \\
-    empirical\_p998     & \SlaFsEPAWSNet{}\% & \SlaFsEPGCPNet{}\% & \SlaFsEPAzureNet{}\% & \SlaRnEPAWSNet{}\% & \SlaRnEPGCPNet{}\% & \SlaRnEPAzureNet{}\% \\
-    gauss\_meanksd      & \SlaFsGAAWSNet{}\% & \SlaFsGAGCPNet{}\% & \SlaFsGAAzureNet{}\% & \SlaRnGAAWSNet{}\% & \SlaRnGAGCPNet{}\% & \SlaRnGAAzureNet{}\% \\
-    rolling\_max        & \SlaFsRMAWSNet{}\% & \SlaFsRMGCPNet{}\% & \SlaFsRMAzureNet{}\% & \SlaRnRMAWSNet{}\% & \SlaRnRMGCPNet{}\% & \SlaRnRMAzureNet{}\% \\
+    lognorm\_ctop       & \SlaFsLNAWSNet{} & \SlaFsLNGCPNet{} & \SlaFsLNAzureNet{} & \SlaRnLNAWSNet{} & \SlaRnLNGCPNet{} & \SlaRnLNAzureNet{} \\
+    rolling\_max        & \SlaFsRMAWSNet{} & \SlaFsRMGCPNet{} & \SlaFsRMAzureNet{} & \SlaRnRMAWSNet{} & \SlaRnRMGCPNet{} & \SlaRnRMAzureNet{} \\
+    empirical\_p998     & \SlaFsEPAWSNet{} & \SlaFsEPGCPNet{} & \SlaFsEPAzureNet{} & \SlaRnEPAWSNet{} & \SlaRnEPGCPNet{} & \SlaRnEPAzureNet{} \\
+    gauss\_meanksd      & \SlaFsGAAWSNet{} & \SlaFsGAGCPNet{} & \SlaFsGAAzureNet{} & \SlaRnGAAWSNet{} & \SlaRnGAGCPNet{} & \SlaRnGAAzureNet{} \\
+    ml\_gbm\_p998       & \SlaFsMLGBAWSNet{} & \SlaFsMLGBGCPNet{} & \SlaFsMLGBAzureNet{} & \SlaRnMLGBAWSNet{} & \SlaRnMLGBGCPNet{} & \SlaRnMLGBAzureNet{} \\
+    ewmq\_p998          & \SlaFsEWMQAWSNet{} & \SlaFsEWMQGCPNet{} & \SlaFsEWMQAzureNet{} & \SlaRnEWMQAWSNet{} & \SlaRnEWMQGCPNet{} & \SlaRnEWMQAzureNet{} \\
     \bottomrule
   \end{tabular}
-  \caption{Mean net revenue ratio per sizing method under each of three
-           public cloud SLA schedules, on the held-out six-day window.
-           Higher is better. \texttt{lognorm\_ctop} wins under every
-           schedule on both traces, with the largest lead over
-           \texttt{gauss\_meanksd} (up to $6.9$ percentage points on
-           fastStorage under AWS).}
+  \caption{Mean net revenue ratio (\%) per sizing method under each of
+    three public cloud SLA schedules, on the held-out six-day window of
+    the unified panel. Higher is better. On fastStorage,
+    \texttt{lognorm\_ctop}'s AWS lead over \texttt{rolling\_max} is
+    \SlaFsLNAWSNet{} vs.\ \SlaFsRMAWSNet{} (95\% CIs
+    [\SlaFsLNAWSNetCiLo, \SlaFsLNAWSNetCiHi] vs.\
+    [\SlaFsRMAWSNetCiLo, \SlaFsRMAWSNetCiHi], non-overlapping); on Rnd
+    the comparable comparison (\SlaRnLNAWSNet{} vs.\ \SlaRnRMAWSNet{},
+    CIs [\SlaRnLNAWSNetCiLo, \SlaRnLNAWSNetCiHi] vs.\
+    [\SlaRnRMAWSNetCiLo, \SlaRnRMAWSNetCiHi]) overlaps.}
   \label{tab:sla}
 \end{table}
 
-The log-normal sizing keeps the highest fraction of nominal revenue under
-every schedule on both traces. Under AWS on fastStorage, the operator
-recovers \SlaFsLNAWSNet{}\% of billed revenue with log-normal sizing
-versus \SlaFsGAAWSNet{}\% under the Gaussian assumption; on Rnd the same
-comparison is \SlaRnLNAWSNet{}\% versus \SlaRnGAAWSNet{}\%. The gap is
-mechanical: right-skewed CPU with symmetric-tail sizing under-covers, and
-the SLA schedule prices that under-coverage sharply at the 99\% and 95\%
-tiers.
+The log-normal ceiling wins the AWS revenue comparison on fastStorage
+cleanly, non-overlapping with every other method's 95\% CI. On Rnd the
+lead over \texttt{rolling\_max} shrinks to about two percentage points
+and the CIs overlap, so on this second trace the two methods are
+statistically tied under AWS. Log-normal beats \texttt{empirical\_p998}
+and \texttt{gauss\_meanksd} with non-overlapping CIs on both traces
+under every provider; the ML baselines lose by wider margins under every
+schedule. The pattern is the coverage-vs-ceiling trade-off from
+Section~\ref{sec:sizing} priced in dollars: methods that cover more
+often (\texttt{lognorm\_ctop}, \texttt{rolling\_max}) keep more revenue
+even when they carry a higher predicted ceiling, because SLA credits are
+step-shaped and the marginal cost of under-coverage exceeds the marginal
+cost of headroom over the range where either method operates.
 
 \section{Discussion}
 
