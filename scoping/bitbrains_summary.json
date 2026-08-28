@@ -1,0 +1,44 @@
+{
+  "n_vms_used": 286,
+  "n_bins": 6233,
+  "min_samples_per_bin": 60,
+  "best_aic_share": {
+    "lognorm": 0.6605,
+    "weibull_min": 0.1742,
+    "gamma": 0.0923,
+    "norm": 0.073
+  },
+  "median_aic": {
+    "lognorm": 205.705,
+    "norm": 369.341,
+    "gamma": 250.727,
+    "weibull_min": 350.926
+  },
+  "ks_not_rejected_at_0.05": {
+    "lognorm": 0.0247,
+    "norm": 0.0212,
+    "gamma": 0.0253,
+    "weibull_min": 0.0173
+  },
+  "ks_not_rejected_at_0.01": {
+    "lognorm": 0.0504,
+    "norm": 0.0383,
+    "gamma": 0.0486,
+    "weibull_min": 0.0327
+  },
+  "aic_lognorm_minus_norm": {
+    "median": -93.174,
+    "share_lognorm_wins": 0.7555,
+    "share_lognorm_wins_by_>=_2": 0.7482
+  },
+  "aic_lognorm_minus_gamma": {
+    "median": -11.989,
+    "share_lognorm_wins": 0.6605,
+    "share_lognorm_wins_by_>=_2": 0.6278
+  },
+  "aic_lognorm_minus_weibull_min": {
+    "median": -54.83,
+    "share_lognorm_wins": 0.7342,
+    "share_lognorm_wins_by_>=_2": 0.7293
+  }
+}

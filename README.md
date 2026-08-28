@@ -46,6 +46,15 @@ short technical report and the source materials it draws on.
 - **`analysis.zip`**: raw per-5-second CPU measurements for two server
   generations (source data behind the fits).
 
+## Scoping experiment (independent replication)
+
+- **[`scoping/`](scoping/)**: reproduces the log-normal CPU-fit claim on the
+  public Bitbrains GWA-T-12 fastStorage trace (1,250 VMs, 30 days). On 286
+  sampled VMs and 6,233 hour-of-day bins, log-normal wins by AIC in 66% of
+  bins, with a 93-point median AIC gap over the normal fit and 12-point over
+  gamma. See [`scoping/README.md`](scoping/README.md) for full method and
+  tables.
+
 ## Assets
 
 - **`assets/cpu-capacity-report.pdf`**: printable PDF of the report.
