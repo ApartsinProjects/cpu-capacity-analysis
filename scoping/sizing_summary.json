@@ -1,0 +1,70 @@
+{
+  "fastStorage": {
+    "lognorm_ctop": {
+      "mean_coverage": 0.9871409378609018,
+      "median_coverage": 1.0,
+      "share_at_target": 0.8298776342624066,
+      "mean_ceiling_pct": 745.2941583531151,
+      "median_ceiling_pct": 3.3280003748072584,
+      "median_rel_cost": 0.5820395784713093
+    },
+    "empirical_p998": {
+      "mean_coverage": 0.9780068436585082,
+      "median_coverage": 1.0,
+      "share_at_target": 0.7824609109449354,
+      "mean_ceiling_pct": 24.326720333217718,
+      "median_ceiling_pct": 3.7866333333333344,
+      "median_rel_cost": 0.15545832274324267
+    },
+    "gauss_meanksd": {
+      "mean_coverage": 0.9777540629789225,
+      "median_coverage": 1.0,
+      "share_at_target": 0.7605370496261047,
+      "mean_ceiling_pct": 26.836918072335738,
+      "median_ceiling_pct": 3.0144131008471797,
+      "median_rel_cost": 0.2501732036929907
+    },
+    "rolling_max": {
+      "mean_coverage": 0.9805857239235178,
+      "median_coverage": 1.0,
+      "share_at_target": 0.8254588715159755,
+      "mean_ceiling_pct": 24.94589761215303,
+      "median_ceiling_pct": 4.2,
+      "median_rel_cost": 0.19463345672283017
+    }
+  },
+  "rnd": {
+    "lognorm_ctop": {
+      "mean_coverage": 0.9794526741290838,
+      "median_coverage": 1.0,
+      "share_at_target": 0.7593388429752066,
+      "mean_ceiling_pct": 430.00347333477333,
+      "median_ceiling_pct": 3.6302227230110304,
+      "median_rel_cost": 0.4054008649696119
+    },
+    "empirical_p998": {
+      "mean_coverage": 0.976472208224161,
+      "median_coverage": 1.0,
+      "share_at_target": 0.7271074380165289,
+      "mean_ceiling_pct": 21.977083923846006,
+      "median_ceiling_pct": 4.525933333333332,
+      "median_rel_cost": 0.12445123865245905
+    },
+    "gauss_meanksd": {
+      "mean_coverage": 0.9707763765828479,
+      "median_coverage": 1.0,
+      "share_at_target": 0.6725619834710744,
+      "mean_ceiling_pct": 23.02496541635727,
+      "median_ceiling_pct": 3.3559789413755006,
+      "median_rel_cost": 0.16866839192056354
+    },
+    "rolling_max": {
+      "mean_coverage": 0.980793539172782,
+      "median_coverage": 1.0,
+      "share_at_target": 0.7889256198347108,
+      "mean_ceiling_pct": 22.565942746245952,
+      "median_ceiling_pct": 4.933333333333334,
+      "median_rel_cost": 0.1625101720530106
+    }
+  }
+}

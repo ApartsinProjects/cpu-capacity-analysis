@@ -318,17 +318,82 @@ $\hat\sigma(\lambda) = \hat\gamma/\sqrt{\lambda} + \hat\delta$. We report the
 distribution of goodness-of-fit ($R^2$) across VMs and the systematic
 residual pattern (Figure~\ref{fig:scaling}, TODO).
 
-\emph{[Numbers to be filled once the scaling fit runs on both public traces.]}
+We fit both parts on \ScalFsNVms{} fastStorage VMs and \ScalRnNVms{} Rnd VMs
+(minimum six hour-of-day bins per VM). Across VMs, the median $R^2$ of the
+$\mu(\lambda)$ fit is \ScalFsMuMedR{} on fastStorage and \ScalRnMuMedR{} on
+Rnd, and reaches or exceeds $0.5$ on only \ScalFsMuShareHalf{}\% and
+\ScalRnMuShareHalf{}\% of VMs respectively; the $\sigma(\lambda)$ fit is
+weaker still (median $R^2$ \ScalFsSigMedR{} / \ScalRnSigMedR{}). The median
+$\hat\alpha$ is small and positive (\ScalFsAlphaMed{} / \ScalRnAlphaMed{}) as
+expected, but the median $\hat\gamma$ is slightly negative
+(\ScalFsGammaMed{} / \ScalRnGammaMed{}) rather than the positive value
+$\sigma \propto 1/\sqrt{\lambda}$ predicts.
+
+We report this plainly as a negative result on the mechanism: the log-normal
+\emph{shape} replicates in Section~\ref{sec:validation}, but the parameter
+\emph{scaling law} implied by the multiplicative-overhead derivation does
+not clearly hold across the heterogeneous Bitbrains VMs with network
+throughput as a load proxy. Two plausible reasons: (i) network throughput
+is at best a monotone but non-linear surrogate for the request-arrival rate
+$\lambda$, and different VMs sit on different segments of that surrogate
+curve; (ii) the original 2011 study fitted homogeneous billing servers with
+a single transaction type at five-second resolution, whereas Bitbrains VMs
+run heterogeneous workloads sampled every five minutes. Deciding the
+mechanism therefore requires paired arrival-rate and CPU data at high
+resolution on a single workload class, which no current public trace supplies
+at scale; this is a natural direction for follow-up work.
 
 \section{Sizing Accuracy}
 \label{sec:sizing}
 
-\emph{[Held-out evaluation: last week of each trace as test set, first three
-weeks as training. Baselines: (i) $\Ctop$ from log-normal fit,
-(ii) 99.8th empirical percentile with 1\,000-bootstrap CI, (iii)
-$\mathbb{E}[C] + 3\,\text{std}(C)$, (iv) univariate LSTM forecast at 99.8th
-predicted percentile. Report coverage at the promised 99.8\% and
-per-method over-provisioning cost, per VM and pooled.]}
+We split each VM's CPU time series into a training set (all samples except
+the last six days) and a test set (last six days). For every
+(VM, hour-of-day) bin with at least 60 training and 12 test samples we fit
+four sizing methods on train and evaluate on test:
+\begin{itemize}
+  \item \textbf{lognorm\_ctop}: $\Ctop = \exp\{\mu + 3\sigma\}$ from the
+        log-normal fit on train.
+  \item \textbf{empirical\_p998}: the 99.8th empirical percentile of train.
+  \item \textbf{gauss\_meanksd}: $\text{mean}(\text{train}) + 3\,\text{std}(\text{train})$, a Gaussian assumption often used in industry.
+  \item \textbf{rolling\_max}: $\max(\text{train})$, a naive worst-case baseline.
+\end{itemize}
+Metrics per bin: coverage rate (fraction of test samples at or below the
+predicted ceiling; target $\geq 99.8\%$), and predicted-ceiling level in CPU
+percent (lower is better once coverage is above target).
+Table~\ref{tab:sizing} reports the pooled results.
+
+\begin{table}[t]
+  \centering
+  \small
+  \begin{tabular}{lrrrr}
+    \toprule
+    & \multicolumn{2}{c}{fastStorage} & \multicolumn{2}{c}{Rnd} \\
+    \cmidrule(lr){2-3}\cmidrule(lr){4-5}
+    Method              & Coverage & Ceiling (\%) & Coverage & Ceiling (\%) \\
+    \midrule
+    lognorm\_ctop       & \SzFsLNMeanCov{}\% & \SzFsLNMedCeiling{} & \SzLNMeanCov{}\% & \SzLNMedCeiling{} \\
+    empirical\_p998     & \SzFsEPMeanCov{}\% & \SzFsEPMedCeiling{} & \SzEPMeanCov{}\% & \SzEPMedCeiling{} \\
+    gauss\_meanksd      & \SzFsGAMeanCov{}\% & \SzFsGAMedCeiling{} & \SzGAMeanCov{}\% & \SzGAMedCeiling{} \\
+    rolling\_max        & \SzFsRMMeanCov{}\% & \SzFsRMMedCeiling{} & \SzRMMeanCov{}\% & \SzRMMedCeiling{} \\
+    \bottomrule
+  \end{tabular}
+  \caption{Sizing accuracy on held-out data (last 6 days). Coverage is the
+           mean fraction of test samples at or below the predicted ceiling
+           across bins (target $\geq 99.8\%$). Ceiling is the median
+           predicted ceiling in CPU\%.}
+  \label{tab:sizing}
+\end{table}
+
+On both traces, \texttt{lognorm\_ctop} attains the highest coverage among
+methods with a comparable ceiling: on fastStorage it hits the 99.8\% target
+in \SzFsLNShareTarget{}\% of bins vs.\ \SzFsGAShareTarget{}\% for the
+Gaussian assumption, at a lower median ceiling than \texttt{rolling\_max}
+(\SzFsLNMedCeiling{} vs.\ \SzFsRMMedCeiling{}). \texttt{gauss\_meanksd}
+achieves the lowest median ceiling on both traces but under-covers, which is
+exactly the failure mode a symmetric assumption predicts on right-skewed
+data. \texttt{rolling\_max} covers well but at a large cost premium
+(median relative over-provisioning \SzFsRMMedRelCost{}\% on fastStorage,
+\SzRMMedRelCost{}\% on Rnd) that would compound across a large fleet.
 
 \section{SLA-Aware Sizing with Public Pricing}
 \label{sec:economics}

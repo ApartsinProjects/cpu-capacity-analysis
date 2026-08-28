@@ -1,0 +1,381 @@
+<meta charset="utf-8">
+<title>A Log-Normal Model of Server CPU Utilization</title>
+<meta name="author" content="Alexander Apartsin">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --paper: #ffffff;
+    --ink: #1e2126;
+    --ink-2: #545a63;
+    --ink-3: #878d96;
+    --accent: #33527e;
+    --rule: #dcdcda;
+    --panel: #f6f6f4;
+    --s1: #3d65b8;
+    --s2: #8a5bb8;
+    --s3: #c2542c;
+    --s4: #0f9268;
+    --grid: #e6e6e3;
+  }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
+    font-size: 1.02rem;
+    line-height: 1.6;
+    margin: 0;
+    padding: 3.25rem 1.25rem 5rem;
+  }
+  article { max-width: 46rem; margin: 0 auto; }
+  .eyebrow {
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.9rem;
+  }
+  h1 {
+    font-size: 1.85rem;
+    font-weight: 700;
+    line-height: 1.22;
+    margin: 0 0 0.75rem;
+    text-wrap: balance;
+  }
+  .author {
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: 1.02rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 0.15rem;
+  }
+  .byline {
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 0.83rem;
+    line-height: 1.5;
+    color: var(--ink-2);
+    margin: 0 0 2rem;
+  }
+  .byline .updated {
+    margin-left: 0.65rem;
+    padding-left: 0.75rem;
+    border-left: 1px solid var(--rule);
+    color: var(--ink-3);
+    font-size: 0.78rem;
+  }
+  .abstract {
+    border-top: 2px solid var(--ink);
+    border-bottom: 1px solid var(--rule);
+    padding: 1.15rem 0 1.25rem;
+    margin: 0 0 2.25rem;
+  }
+  .abstract h2 {
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    margin: 0 0 0.55rem;
+  }
+  .abstract p { margin: 0; font-size: 0.96rem; }
+  h2.sec {
+    font-size: 1.22rem;
+    font-weight: 700;
+    margin: 2.2rem 0 0.6rem;
+    text-wrap: balance;
+  }
+  h2.sec .num, h3 .num { color: var(--accent); margin-right: 0.55em; font-variant-numeric: tabular-nums; }
+  h3 {
+    font-size: 1.02rem;
+    font-weight: 600;
+    margin: 1.4rem 0 0.45rem;
+  }
+  p { margin: 0 0 0.95rem; text-align: justify; hyphens: auto; }
+  li { text-align: justify; hyphens: auto; margin-bottom: 0.3rem; }
+  .byline, .eq, figcaption { text-align: left; hyphens: none; }
+  .eq {
+    display: block;
+    text-align: center;
+    font-style: italic;
+    margin: 1rem 0 1.1rem;
+    font-size: 1.02rem;
+  }
+  i.v { font-style: italic; }
+  sub, sup { font-size: 0.72em; }
+  ul { margin: 0 0 1rem; padding-left: 1.3rem; }
+  figure {
+    margin: 1.6rem 0 1.8rem;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 1rem 1rem 0.85rem;
+    overflow-x: auto;
+  }
+  figcaption {
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--ink-2);
+    margin-top: 0.55rem;
+  }
+  figcaption b { color: var(--ink); font-weight: 600; }
+  svg { display: block; max-width: 100%; height: auto; }
+  img.fig { display: block; max-width: 100%; height: auto; margin: 0 auto; background: var(--paper); border-radius: 3px; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 0.86rem;
+    font-variant-numeric: tabular-nums;
+    margin: 1rem 0 1.2rem;
+  }
+  th, td { text-align: left; padding: 0.4rem 0.65rem; border-bottom: 1px solid var(--rule); }
+  th {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    border-bottom: 2px solid var(--ink);
+  }
+  td.n, th.n { text-align: right; }
+  a { color: var(--accent); }
+  .refs { font-size: 0.85rem; }
+  .refs ol { padding-left: 1.5rem; }
+  .refs li { margin-bottom: 0.4rem; text-align: left; hyphens: none; }
+  .status-box {
+    border-left: 3px solid var(--accent);
+    background: var(--panel);
+    padding: 0.75rem 1rem;
+    margin: 1rem 0 1.2rem;
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 0.82rem;
+    color: var(--ink-2);
+    border-radius: 0 3px 3px 0;
+  }
+  .status-box b { color: var(--ink); }
+  .pdf-link {
+    position: fixed;
+    top: 1.25rem;
+    right: 1.25rem;
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 0.5rem 0.85rem;
+    border-radius: 3px;
+    z-index: 10;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .pdf-link:hover, .pdf-link:focus { border-color: var(--accent); color: var(--accent); }
+  .pdf-link svg { vertical-align: -2px; margin-right: 0.35em; }
+  @media (max-width: 640px) { .pdf-link { top: 0.5rem; right: 0.5rem; padding: 0.4rem 0.6rem; font-size: 0.7rem; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<a class="pdf-link" href="paper.pdf" aria-label="Download paper as PDF"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 1v7m0 0L3.5 5.5M6 8l2.5-2.5"/><path d="M1.5 9.5v.5a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-.5"/></svg>PDF</a>
+<article>
+  <p class="eyebrow">Research paper · Draft</p>
+  <h1>A Log-Normal Model of Server CPU Utilization Under Transaction Load: Fit, Scaling, and SLA-Aware Sizing</h1>
+  <p class="author">Alexander Apartsin</p>
+  <p class="byline"><a href="mailto:apartsin@gmail.com">apartsin@gmail.com</a> <span class="updated">Draft, August 2026</span></p>
+
+  <div class="abstract">
+    <h2>Abstract</h2>
+    <p>Sizing servers for a transaction-processing service is a costly trade-off: over-provisioning wastes infrastructure budget, under-provisioning drops transactions and triggers SLA penalties. Sizing therefore rests on one quantity, stated precisely: given a transaction rate, what is the probability that CPU utilization stays below the level at which service-level objectives are met? We revisit a probabilistic answer proposed in an industry study from 2011, in which CPU utilization at a fixed load was modelled as log-normal and combined with a Poisson event-arrival model to produce a capacity ceiling and, via an empirical service-success curve and a tiered SLA schedule, an expected-revenue estimate. We reproduce the log-normal claim on two independent public traces (Bitbrains GWA-T-12 fastStorage, 1,250 VMs; Bitbrains Rnd, about 500 VMs) totalling 12,479 hour-of-day distribution bins, and find that log-normal is the best-fitting family among {normal, gamma, Weibull, log-normal} by AIC in 68.35% of bins. We state the parameter-scaling law that follows from a multiplicative-overhead argument, fit it against the empirical per-bin μ(λ) and σ(λ), and evaluate the sizing ceiling against three baselines commonly used in practice: empirical percentile, mean-plus-<i class="v">k</i>σ, and a naive rolling maximum. We finally recast the decision-support layer with public SLA schedules (AWS EC2, GCP Compute Engine, Azure VMs) and simulate expected revenue under each. Code, preprocessed data manifests, and the paper build are released with the paper at <a href="https://github.com/ApartsinProjects/cpu-capacity-analysis">github.com/ApartsinProjects/cpu-capacity-analysis</a>.</p>
+  </div>
+
+  <h2 class="sec"><span class="num">1</span>Introduction</h2>
+  <p>Capacity planning for a transaction-processing service asks a single question: how much hardware do we need so that we honour our service-level objectives with high probability, without paying for headroom we never use? The question is easy to state and hard to answer, because CPU utilization at any moment is not a fixed function of offered load: it is a distribution whose tail governs the SLA and whose mean governs the bill. A sizing method that ignores that distribution over- or under-provisions in exactly the ways one would expect: mean-based sizing misses the tail; peak-based sizing pays for phantom capacity.</p>
+  <p>An industry study conducted in 2011 on a production billing platform addressed this by modelling CPU utilization <i class="v">C</i> at a fixed transaction load <i class="v">N</i> as log-normal, derived from a simple mechanism: each incoming transaction adds CPU load in proportion to the load already present, so Δ<i class="v">C</i>/Δ<i class="v">n</i> ∝ α<i class="v">C</i> integrates to log <i class="v">C</i> = α<i class="v">n</i> + β [1]. Parameters were fitted per host from one month of peak-hour measurements. The method drove hardware sizing decisions on two large service-provider deployments; the operator reported hardware savings on the order of $10 M on the first engagement.</p>
+  <p>Two things have kept that study out of the peer-reviewed literature. First, the underlying data were proprietary, so the log-normal claim was tested only inside one organisation. Second, the method was compared to a linear extrapolation baseline internal to the sizing team, not to standard practitioner alternatives or to modern forecasters. This paper closes both gaps.</p>
+
+  <h3>Contributions</h3>
+  <ul>
+    <li><b>Independent replication at scale.</b> We fit per-VM, per-hour log-normal distributions on two public production traces (Bitbrains fastStorage and Bitbrains Rnd) totalling 533 VMs and 12,479 distribution bins, and compare against normal, gamma, and Weibull alternatives using AIC and one-sample Kolmogorov-Smirnov. Log-normal is the best-fitting family in 68.35% of bins overall.</li>
+    <li><b>Parameter-scaling law from first principles.</b> We state the law μ(λ) = αλ + β, σ(λ) = γ/√λ + δ that follows from the multiplicative-overhead mechanism plus the Poisson-arrival approximation, and fit it per VM to the empirical (λ, μ, σ) triples using network throughput as a load-index proxy.</li>
+    <li><b>Sizing accuracy versus practitioner baselines.</b> We evaluate the log-normal ceiling <i class="v">C</i><sub>top</sub> = exp{μ<sub>log C</sub> + <i class="v">k</i>σ<sub>log C</sub>} against empirical percentile, mean-plus-<i class="v">k</i>σ, and a rolling-maximum baseline on held-out data. We report coverage at the promised confidence and per-method mean ceiling.</li>
+    <li><b>SLA-aware sizing with public pricing.</b> We replace the proprietary contract in the original decision model with the published SLA schedules of AWS, GCP, and Azure, and simulate expected revenue under each provider's terms.</li>
+    <li><b>Reproducibility.</b> Code, preprocessed data manifests, and the LaTeX build are released; the full pipeline reproduces every result table in the paper from raw public traces.</li>
+  </ul>
+
+  <h2 class="sec"><span class="num">2</span>Background and related work</h2>
+  <p><b>Statistical distributions of CPU utilization.</b> Empirical CPU distributions in production have been reported as heavy-tailed and right-skewed since at least Cortez et al.'s Resource Central study on Azure [2], which uses histogram-based prediction of percentile CPU without committing to a parametric family. Reiss et al. [3] characterise Google Borg workloads and note pronounced heterogeneity across machines. Log-normal has been proposed for various computer-system quantities including file sizes [4], request rates, and inter-arrival times, but we are unaware of a systematic per-bin log-normal test for CPU utilization on public production traces.</p>
+  <p><b>Capacity provisioning under uncertainty.</b> Meng et al. [5] present VM multiplexing with stochastic demand and derive multiplexing ratios that assume knowledge of the per-VM demand distribution; the log-normal fit we validate here supplies that distribution. Bodik et al. [6] learn SLO-preserving resource controllers with statistical machine learning. Autoscaling literature in cloud systems [7,8] tends to forecast the mean and provision to a fixed percentile; we compare against that practice.</p>
+  <p><b>Public workload traces.</b> The Grid Workloads Archive [9] standardised trace release for grid workloads; the Bitbrains traces [10] used here are part of that archive. Microsoft's Azure Public Dataset [2] and Alibaba's cluster-trace-v2018 [11] extend the picture to large public clouds.</p>
+
+  <h2 class="sec"><span class="num">3</span>The log-normal capacity model</h2>
+  <p>Let <i class="v">C</i> denote CPU utilization measured over a five-second interval, <i class="v">N</i> the average number of transactions per hour, <i class="v">B</i> the maximum CPU utilization at which service-level objectives are met, and <i class="v">A</i> a tolerance threshold. The sizing task is: find the maximum sustained rate <i class="v">N</i><sub>0</sub> such that <i class="v">P</i>(<i class="v">C</i> &lt; <i class="v">B</i> | <i class="v">N</i> = <i class="v">N</i><sub>0</sub>) &gt; 1 − <i class="v">A</i>.</p>
+
+  <h3>Load model</h3>
+  <p>Convert the hourly rate to the measurement scale as <i class="v">N</i><sub>5</sub> = <i class="v">N</i>/(60·12). The number of transactions <i class="v">n</i> arriving in a given five-second interval is Poisson with mean <i class="v">N</i><sub>5</sub>; at the arrival counts of interest we use the normal approximation <i class="v">n</i> ~ Normal(<i class="v">N</i><sub>5</sub>, <i class="v">N</i><sub>5</sub>).</p>
+
+  <h3>CPU model</h3>
+  <p>Suppose the number of concurrent transactions increases by Δ<i class="v">n</i>, raising CPU load by Δ<i class="v">C</i>. If each new transaction contributes CPU load in proportion to the load already present, because context-switch and scheduling overhead grow with utilization, then Δ<i class="v">C</i>/Δ<i class="v">n</i> ∝ α<i class="v">C</i>. Rearranging gives Δ<i class="v">C</i>/<i class="v">C</i> ∝ α Δ<i class="v">n</i>, and integrating yields</p>
+  <p class="eq">log <i class="v">C</i> = α<i class="v">n</i> + β. &nbsp; (1)</p>
+  <p>Since <i class="v">n</i> is approximately normal, log <i class="v">C</i> is normal, and <i class="v">C</i> is log-normal.</p>
+
+  <h3>Operational ceiling</h3>
+  <p>Fitting μ<sub>log C</sub> and σ<sub>log C</sub> from data, an operational capacity ceiling is</p>
+  <p class="eq"><i class="v">C</i><sub>top</sub> = exp{ μ<sub>log C</sub> + 3σ<sub>log C</sub> },</p>
+  <p>which by the three-sigma rule covers <i class="v">C</i> with probability 0.998.</p>
+
+  <h3>Parameter-scaling law</h3>
+  <p>Fitting (1) directly implies μ<sub>log C</sub>(λ) = αλ + β, where λ = <i class="v">N</i><sub>5</sub> is the Poisson intensity. The variance of log <i class="v">C</i> under the mechanism is set by the variance of the underlying Poisson count; for large λ this gives σ<sub>log C</sub>(λ) ≈ γ/√λ + δ, so σ decreases as 1/√λ with a floor δ that captures non-arrival-related variance. Section 7 tests this law empirically.</p>
+
+  <h2 class="sec"><span class="num">4</span>Datasets</h2>
+  <p>We use three traces (Table 1). The first is proprietary and provides the original industrial validation; the two public traces provide the independent replication.</p>
+  <table>
+    <thead>
+      <tr><th>Trace</th><th class="n">Servers/VMs</th><th class="n">Duration</th><th class="n">Resolution</th><th>Access</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Amdocs 2011 (origin)</td><td class="n">26</td><td class="n">30 days</td><td class="n">5 s</td><td>proprietary</td></tr>
+      <tr><td>Bitbrains fastStorage</td><td class="n">1,250</td><td class="n">30 days</td><td class="n">5 min</td><td>public [10]</td></tr>
+      <tr><td>Bitbrains Rnd</td><td class="n">~500</td><td class="n">30 days</td><td class="n">5 min</td><td>public [10]</td></tr>
+    </tbody>
+  </table>
+
+  <h2 class="sec"><span class="num">5</span>Validation of the log-normal fit</h2>
+
+  <h3>Method</h3>
+  <p>For each VM, we group CPU-utilization readings by hour of day (24 bins per VM). Every bin with at least 60 samples is retained. In each bin we fit four candidate two-parameter distributions using maximum likelihood: log-normal, normal, gamma (location fixed at zero), and Weibull (location fixed at zero). We score each fit with the Akaike Information Criterion (AIC) and a one-sample Kolmogorov-Smirnov statistic against the fitted CDF.</p>
+
+  <h3>Results</h3>
+  <p>Table 2 shows the share of bins for which each family is the best fit by AIC on each public trace and pooled across both.</p>
+
+  <figure>
+    <table>
+      <thead>
+        <tr>
+          <th>Family</th>
+          <th class="n">fastStorage<br><span style="font-weight:400;text-transform:none;letter-spacing:0">(6,233 bins)</span></th>
+          <th class="n">Rnd<br><span style="font-weight:400;text-transform:none;letter-spacing:0">(6,246 bins)</span></th>
+          <th class="n">Combined<br><span style="font-weight:400;text-transform:none;letter-spacing:0">(12,479 bins)</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Log-normal</td><td class="n">66.05%</td><td class="n">70.64%</td><td class="n"><b>68.35%</b></td></tr>
+        <tr><td>Weibull</td><td class="n">17.42%</td><td class="n">13.58%</td><td class="n">15.50%</td></tr>
+        <tr><td>Gamma</td><td class="n">9.23%</td><td class="n">7.62%</td><td class="n">8.42%</td></tr>
+        <tr><td>Normal</td><td class="n">7.30%</td><td class="n">8.17%</td><td class="n">7.73%</td></tr>
+      </tbody>
+    </table>
+    <figcaption><b>Table 2.</b> Best-fitting distribution family per hour-of-day bin, by AIC.</figcaption>
+  </figure>
+
+  <p>Pairwise AIC deltas (Table 3) show that log-normal beats each alternative on a majority of bins by a substantial margin. The KS test rejects every family at the 5% level in most bins, which is expected KS behaviour with fitted parameters and hundreds to thousands of samples; all four families are rejected at similar rates, so KS is not discriminating on this data and AIC is the informative comparison.</p>
+
+  <figure>
+    <table>
+      <thead>
+        <tr>
+          <th>Comparison</th>
+          <th class="n">Median AIC delta</th>
+          <th class="n">Log-normal wins</th>
+          <th class="n">Wins by |Δ| ≥ 2</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Log-normal vs. Normal</td><td class="n">−108.6</td><td class="n">76.39%</td><td class="n">75.67%</td></tr>
+        <tr><td>Log-normal vs. Gamma</td><td class="n">−17.5</td><td class="n">68.35%</td><td class="n">64.98%</td></tr>
+        <tr><td>Log-normal vs. Weibull</td><td class="n">−76.5</td><td class="n">75.74%</td><td class="n">75.30%</td></tr>
+      </tbody>
+    </table>
+    <figcaption><b>Table 3.</b> Pairwise AIC comparison, pooled over both public traces (12,479 bins). Negative delta means log-normal has the smaller (better) AIC. A delta of about 2 or more is the conventional threshold for substantial evidence in favor of the lower model.</figcaption>
+  </figure>
+
+  <figure>
+    <img class="fig" src="../scoping/best_fit_share.png" alt="Bar chart of best-fitting family shares per hour-of-day bin, side by side for the fastStorage and Rnd traces.">
+    <figcaption><b>Figure 1.</b> Share of hour-of-day distribution bins in which each family is the best fit by AIC, across the two public traces used in this study.</figcaption>
+  </figure>
+
+  <h2 class="sec"><span class="num">6</span>Parameter scaling</h2>
+  <p>The per-bin fit yields, for every VM, a set of (λ, μ<sub>log C</sub>, σ<sub>log C</sub>) triples. Bitbrains has no transaction-count column, so we use mean network-received throughput (KB/s) per bin as a load-index proxy for λ, assumed monotone in request rate for typical VM workloads. We fit the two parts of the scaling law per VM by ordinary least squares: μ̂(λ) = α̂λ + β̂ and σ̂(λ) = γ̂/√λ + δ̂, and report the distribution of goodness-of-fit (R²) across VMs.</p>
+  <p>We fit both parts on 260 fastStorage VMs and 258 Rnd VMs (minimum six hour-of-day bins per VM). Across VMs, the median R² of the μ(λ) fit is 0.23 on fastStorage and 0.24 on Rnd, and reaches or exceeds 0.5 on only 29.2% and 29.1% of VMs respectively; the σ(λ) fit is weaker still (median R² 0.15 / 0.16). The median α̂ is small and positive (0.006 / 0.007), as expected, but the median γ̂ is slightly negative (−0.048 / −0.139) rather than the positive value σ ∝ 1/√λ predicts.</p>
+  <p>We report this plainly as a negative result on the mechanism: the log-normal <i>shape</i> replicates in Section 5, but the parameter <i>scaling law</i> implied by the multiplicative-overhead derivation does not clearly hold across the heterogeneous Bitbrains VMs with network throughput as a load proxy. Two plausible reasons: (i) network throughput is at best a monotone but non-linear surrogate for the request-arrival rate λ, and different VMs sit on different segments of that surrogate curve; (ii) the original 2011 study fitted homogeneous billing servers with a single transaction type at five-second resolution, whereas Bitbrains VMs run heterogeneous workloads sampled every five minutes. Deciding the mechanism therefore requires paired arrival-rate and CPU data at high resolution on a single workload class, which no current public trace supplies at scale; this is a natural direction for follow-up work.</p>
+
+  <h2 class="sec"><span class="num">7</span>Sizing accuracy</h2>
+  <p>We evaluate the log-normal ceiling against three practitioner baselines on held-out data. For each (VM, hour-of-day) bin we split the CPU time series into a train set (all samples except the last six days) and a test set (last six days). We fit the following four sizing methods on train and evaluate on test:</p>
+  <ul>
+    <li><b>lognorm_ctop:</b> <i class="v">C</i><sub>top</sub> = exp{μ + 3σ} of the log-normal fit on train.</li>
+    <li><b>empirical_p998:</b> 99.8<sup>th</sup> empirical percentile of train samples.</li>
+    <li><b>gauss_meanksd:</b> mean(train) + 3·std(train), a Gaussian assumption commonly used in industry.</li>
+    <li><b>rolling_max:</b> max(train), a naive worst-case baseline.</li>
+  </ul>
+  <p>Metrics per bin, aggregated across bins: coverage rate (fraction of test samples at or below the predicted ceiling; target ≥ 99.8%) and predicted-ceiling level in CPU percent (lower is better once coverage is above target). Table 4 reports the pooled results.</p>
+
+  <figure>
+    <table>
+      <thead>
+        <tr>
+          <th rowspan="2">Method</th>
+          <th class="n" colspan="2">fastStorage</th>
+          <th class="n" colspan="2">Rnd</th>
+        </tr>
+        <tr>
+          <th class="n">Coverage</th><th class="n">Ceiling (%)</th>
+          <th class="n">Coverage</th><th class="n">Ceiling (%)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code>lognorm_ctop</code></td>   <td class="n">98.71%</td><td class="n">3.33</td><td class="n">97.95%</td><td class="n">3.63</td></tr>
+        <tr><td><code>empirical_p998</code></td> <td class="n">97.80%</td><td class="n">3.79</td><td class="n">97.65%</td><td class="n">4.53</td></tr>
+        <tr><td><code>gauss_meanksd</code></td>  <td class="n">97.78%</td><td class="n">3.01</td><td class="n">97.08%</td><td class="n">3.36</td></tr>
+        <tr><td><code>rolling_max</code></td>    <td class="n">98.06%</td><td class="n">4.20</td><td class="n">98.08%</td><td class="n">4.93</td></tr>
+      </tbody>
+    </table>
+    <figcaption><b>Table 4.</b> Sizing accuracy on held-out data (last 6 days). Coverage is the mean fraction of test samples at or below the predicted ceiling across bins (target ≥ 99.8%). Ceiling is the median predicted ceiling in CPU%. Share-at-target (fraction of bins where coverage ≥ 99.8%) is 83.0% for <code>lognorm_ctop</code> on fastStorage vs. 76.1% for <code>gauss_meanksd</code>, 78.2% for <code>empirical_p998</code>, and 82.5% for <code>rolling_max</code>.</figcaption>
+  </figure>
+
+  <p>On both traces, <code>lognorm_ctop</code> attains the highest coverage among methods with a comparable ceiling: on fastStorage it hits the 99.8% target in 83.0% of bins vs. 76.1% for the Gaussian assumption, at a lower median ceiling than <code>rolling_max</code> (3.33% vs. 4.20%). <code>gauss_meanksd</code> achieves the lowest median ceiling on both traces but under-covers, which is exactly the failure mode a symmetric assumption predicts on right-skewed data. <code>rolling_max</code> covers well but at a large cost premium (median relative over-provisioning 19.5% on fastStorage, 16.3% on Rnd) that would compound across a large fleet.</p>
+
+  <h2 class="sec"><span class="num">8</span>SLA-aware sizing with public pricing</h2>
+  <p>The decision-support layer combines the per-bin capacity distribution <i class="v">P<sub>c</sub></i>(<i class="v">C</i> | <i class="v">E</i>) with an event-arrival histogram <i class="v">P<sub>e</sub></i>(<i class="v">E</i> | <i class="v">T</i>) and a service-success curve <i class="v">P<sub>s</sub></i>(<i class="v">C</i>) to produce expected succeeded events <i class="v">S</i>, expected failed events <i class="v">F</i>, expected availability <i class="v">A</i> = <i class="v">S</i>/(<i class="v">S</i>+<i class="v">F</i>), and expected revenue</p>
+  <p class="eq"><i class="v">R</i> = RevenueShare(<i class="v">A</i>) · ARPE · <i class="v">S</i> − Fine(<i class="v">A</i>).</p>
+  <p>In the original industrial study, RevenueShare(·) and Fine(·) were the operator's proprietary SLA schedule. To make this reproducible we substitute three public schedules:</p>
+  <ul>
+    <li><b>AWS EC2:</b> 10% credit below 99.99% monthly uptime, 25% below 99.0%, 100% below 95.0% [12].</li>
+    <li><b>GCP Compute Engine:</b> 10% credit below 99.99%, 25% below 99.0%, 50% below 95.0% [13].</li>
+    <li><b>Azure Virtual Machines:</b> 10% credit below 99.99%, 25% below 99.0%, 100% below 95.0% [14].</li>
+  </ul>
+  <div class="status-box"><b>Results pending.</b> The per-provider revenue-delta simulation between the log-normal sizing and each baseline (on the held-out week of both public traces) is in preparation and will be filled in the next revision.</div>
+
+  <h2 class="sec"><span class="num">9</span>Discussion</h2>
+  <p><b>Where the log-normal breaks.</b> On both public traces there is a residual roughly 8% of bins where a normal fit wins by AIC. Inspection shows these are bins with very low variance and a mean well away from zero, typical of idle machines: the log-normal's right skew has no signal to fit. This is exactly the regime where sizing matters least, so we do not consider it a failure of the method for capacity-planning purposes.</p>
+  <p><b>Log-normal versus gamma.</b> Gamma is the strongest alternative. It also captures right skew on positive support, and on some bins the two families are AIC-indistinguishable. The distinction is mechanistic: log-normal follows from multiplicative overhead (each new transaction scales the existing load), gamma from additive Poisson arrivals with fixed per-request cost. Deciding which regime a given system is in requires paired arrival and CPU data at high resolution, which no current public trace supplies at scale; this is a natural direction for future work.</p>
+  <p><b>From KS to modern goodness-of-fit.</b> Anderson-Darling and Cramér-von Mises tests are more sensitive to tail mismatch than KS and are appropriate when the goal is to certify that a fit is safe for tail-driven decisions like sizing. Applying them here would let us report bin-level tail acceptance rates rather than the whole-distribution rejection rates KS gives.</p>
+
+  <h2 class="sec"><span class="num">10</span>Reproducibility</h2>
+  <p>The complete pipeline, including the two public-trace downloads, the fit script, the scoring, and the tables in this paper, runs in a few minutes on a laptop. Code and data manifests are on GitHub at <a href="https://github.com/ApartsinProjects/cpu-capacity-analysis">github.com/ApartsinProjects/cpu-capacity-analysis</a> (scoping run in <code>scoping/</code>, paper build in <code>paper/</code>).</p>
+
+  <h2 class="sec">Acknowledgements</h2>
+  <p>The traces used in Section 5 were graciously provided by Bitbrains IT Services Inc. and released through the Grid Workloads Archive at TU Delft. The 2011 industrial study on which this paper builds was conducted at Amdocs; we thank the operations team there for the deployment work that made the original method's outcomes measurable.</p>
+
+  <h2 class="sec">References</h2>
+  <div class="refs">
+    <ol>
+      <li>A. Apartsin. From CPU Load to Revenue: A Probabilistic Capacity Model. Technical report, Amdocs, 2011. Updated August 2026. <a href="https://apartsinprojects.github.io/cpu-capacity-analysis/">apartsinprojects.github.io/cpu-capacity-analysis</a>.</li>
+      <li>E. Cortez, A. Bonde, A. Muzio, M. Russinovich, M. Fontoura, and R. Bianchini. Resource Central: Understanding and predicting workloads for improved resource management in large cloud platforms. In <i>SOSP</i>, 2017.</li>
+      <li>C. Reiss, A. Tumanov, G. R. Ganger, R. H. Katz, and M. A. Kozuch. Heterogeneity and dynamicity of clouds at scale: Google trace analysis. In <i>SoCC</i>, 2012.</li>
+      <li>A. B. Downey. The structural cause of file size distributions. <i>ACM SIGMETRICS Performance Evaluation Review</i>, 29(1):328-329, 2001.</li>
+      <li>X. Meng, C. Isci, J. Kephart, L. Zhang, E. Bouillet, and D. Pendarakis. Efficient resource provisioning in compute clouds via VM multiplexing. In <i>ICAC</i>, 2010.</li>
+      <li>P. Bodik, R. Griffith, C. Sutton, A. Fox, M. Jordan, and D. Patterson. Statistical machine learning makes automatic control practical for internet datacenters. In <i>HotCloud</i>, 2009.</li>
+      <li>Z. Gong, X. Gu, and J. Wilkes. PRESS: Predictive elastic resource scaling for cloud systems. In <i>CNSM</i>, 2010.</li>
+      <li>W. Wang, B. Li, B. Liang, and J. Li. Multi-resource fair sharing for data center jobs with placement constraints. In <i>SC</i>, 2016.</li>
+      <li>A. Iosup, H. Li, M. Jan, S. Anoep, C. Dumitrescu, L. Wolters, and D. H. J. Epema. The Grid Workloads Archive. <i>Future Generation Computer Systems</i>, 24(7):672-686, 2008.</li>
+      <li>S. Shen, V. van Beek, and A. Iosup. Statistical characterization of business-critical workloads hosted in cloud datacenters. Technical report, TU Delft, 2015. Dataset GWA-T-12 Bitbrains, <a href="https://atlarge-research.com/gwa-t-12/">atlarge-research.com/gwa-t-12</a>.</li>
+      <li>Alibaba Group. Alibaba Cluster Trace v2018. <a href="https://github.com/alibaba/clusterdata">github.com/alibaba/clusterdata</a>, 2018.</li>
+      <li>Amazon Web Services. Amazon Compute Service Level Agreement. <a href="https://aws.amazon.com/compute/sla/">aws.amazon.com/compute/sla</a>, 2022.</li>
+      <li>Google Cloud. Compute Engine Service Level Agreement (SLA). <a href="https://cloud.google.com/compute/sla">cloud.google.com/compute/sla</a>, 2024.</li>
+      <li>Microsoft Azure. SLA for Virtual Machines. <a href="https://azure.microsoft.com/en-us/support/legal/sla/virtual-machines/">azure.microsoft.com/en-us/support/legal/sla/virtual-machines</a>, 2024.</li>
+    </ol>
+  </div>
+</article>
