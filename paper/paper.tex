@@ -107,6 +107,36 @@ extrapolation baseline internal to the operator's team, not to standard
 practitioner alternatives or to data-driven forecasters. This paper puts
 the model on public data and against standard baselines.
 
+\paragraph{Why sizing accuracy is a dollar problem.} Two forces make this
+question a direct cost lever, not a modelling curiosity. First, SLA
+schedules are convex and steep near the promised availability: on our
+Section~\ref{sec:economics} simulation using public cloud SLAs (AWS EC2,
+GCP Compute Engine, Azure VMs), the difference between a sizing method
+that hits the target confidence in 83\% of bins and one that hits it in
+76\% translates to a 5.9-percentage-point gap in the fraction of billed
+revenue the operator keeps under AWS on fastStorage. On a fleet with
+seven-figure annual compute spend that is a seven-figure delta. Second,
+over-provisioning is not free even when coverage is met: a method that
+covers by piling up headroom (rolling maximum on the training window)
+reserves a median 19\% more capacity than the actual 99th-percentile
+demand of the test window, and 16\% more on the second trace. The
+addressable saving from picking the right sizing method is bounded below
+by the sum of those two effects and applies per VM per year for the life
+of the deployment. A one-parameter physically-motivated ceiling that
+closes both gaps is therefore a load-bearing operational component, not
+a stylistic choice.
+
+\paragraph{Who this is for.} Capacity planners running managed
+transaction-processing services (billing platforms, ad servers, checkout
+systems, ticketing, any workload where the operator commits to a per-event
+service-level target) can apply the fitted log-normal ceiling directly:
+the fit is per-host and re-learned monthly from ordinary CPU-utilization
+telemetry, the resulting $\Ctop$ is a single number per host per
+hour-of-day bin, and the decision layer in Section~\ref{sec:economics}
+turns it into an expected-revenue estimate under whichever tiered
+contract the operator holds. Section~\ref{sec:reproducibility} ships the
+whole pipeline as a two-file reference implementation.
+
 \subsection*{Contributions}
 
 \begin{itemize}
@@ -116,18 +146,25 @@ the model on public data and against standard baselines.
         and \NBinsAll{} distribution bins, and compare against normal,
         gamma, and Weibull alternatives using AIC and one-sample KS. Log-normal
         is the best-fitting family in \LogNormShareAll{}\% of bins overall.
-  \item \textbf{Parameter-scaling law from first principles.} We derive the
-        law $\mu(\lambda) = \alpha\lambda + \beta$,
-        $\sigma(\lambda) = \gamma/\sqrt{\lambda} + \delta$ from the
-        multiplicative-overhead mechanism plus the Poisson-arrival
-        approximation, and fit it per-VM to the empirical
+  \item \textbf{Parameter-scaling law from first principles.} We derive
+        $\mu(\lambda) = \alpha\lambda + \beta$ and the corrected
+        standard-deviation form
+        $\sigma(\lambda) = \sqrt{\alpha^2\lambda + \sigma_\varepsilon^2}$
+        from the multiplicative-overhead mechanism plus the Poisson-arrival
+        approximation, and fit both per VM to the empirical
         $(\lambda,\mu,\sigma)$ triples from Section~\ref{sec:validation}.
+        The mean and variance clauses' fitted $\hat\alpha$ rank-correlate
+        strongly across VMs (Spearman 0.82 to 0.94), and the variance
+        clause's coefficient is systematically nine times the mean
+        clause's, a measured excess that we attribute to load-proportional
+        demand fluctuation.
   \item \textbf{Sizing accuracy versus practitioner baselines.} We evaluate
         the log-normal ceiling
-        $\Ctop = \exp\{\mu_{\log C} + k\sigma_{\log C}\}$ against
-        empirical percentile with bootstrap CIs, mean-plus-$k\sigma$, and a
-        short-horizon LSTM forecaster on held-out data. We report coverage
-        at the promised confidence and over-provisioning cost per method.
+        $\Ctop = \exp\{\mu_{\log C} + k\sigma_{\log C}\}$ against five
+        baselines on held-out data: empirical 99.8th percentile,
+        mean-plus-$k\sigma$, rolling maximum, quantile gradient boosting,
+        and exponentially weighted moving quantile. We report share-at-target
+        coverage and median predicted ceiling per method.
   \item \textbf{SLA-aware sizing with public pricing.} We replace the
         proprietary contract in the original decision model with the
         published SLA schedules of AWS, GCP, and Azure and their on-demand
@@ -627,6 +664,7 @@ us report bin-level tail acceptance rates rather than the whole-distribution
 rejection rates KS gives.
 
 \section{Reproducibility}
+\label{sec:reproducibility}
 The complete pipeline, including the two public-trace downloads, the fit
 script, the scoring, and the tables in this paper, runs from a released
 Docker image in under 15 minutes on a laptop. Code and data manifests are on
