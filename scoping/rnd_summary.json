@@ -1,0 +1,37 @@
+{
+  "n_vms_used": 291,
+  "n_bins": 6246,
+  "best_aic_share": {
+    "lognorm": 0.7064,
+    "weibull_min": 0.1358,
+    "norm": 0.0817,
+    "gamma": 0.0762
+  },
+  "median_aic": {
+    "lognorm": 146.472,
+    "norm": 396.095,
+    "gamma": 211.919,
+    "weibull_min": 335.514
+  },
+  "ks_not_rejected_at_0.05": {
+    "lognorm": 0.0256,
+    "norm": 0.0181,
+    "gamma": 0.025,
+    "weibull_min": 0.0211
+  },
+  "aic_lognorm_minus_norm": {
+    "median": -128.546,
+    "share_lognorm_wins": 0.7722,
+    "share_lognorm_wins_by_>=_2": 0.7651
+  },
+  "aic_lognorm_minus_gamma": {
+    "median": -25.654,
+    "share_lognorm_wins": 0.7064,
+    "share_lognorm_wins_by_>=_2": 0.6718
+  },
+  "aic_lognorm_minus_weibull_min": {
+    "median": -101.674,
+    "share_lognorm_wins": 0.7807,
+    "share_lognorm_wins_by_>=_2": 0.7767
+  }
+}
