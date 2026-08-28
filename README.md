@@ -7,9 +7,10 @@ short technical report and the source materials it draws on.
 
 ## The report
 
-- **[cpu-capacity-report.html](cpu-capacity-report.html)** — the report (open
-  in a browser). Also rendered to **[assets/cpu-capacity-report.pdf](assets/cpu-capacity-report.pdf)**.
-- Published web version:
+- **Read online (GitHub Pages):** <https://apartsinprojects.github.io/cpu-capacity-analysis/>
+- **Printable PDF:** [assets/cpu-capacity-report.pdf](assets/cpu-capacity-report.pdf)
+- **Source HTML:** [cpu-capacity-report.html](cpu-capacity-report.html)
+- Mirror on claude.ai:
   <https://claude.ai/code/artifact/bf37f8f8-b3a1-429f-8345-ee2540f03edd>
 
 ## Source materials
