@@ -342,6 +342,8 @@
     <li><b>empirical_p998:</b> 99.8<sup>th</sup> empirical percentile of train samples.</li>
     <li><b>gauss_meanksd:</b> mean(train) + 3·std(train), a Gaussian assumption commonly used in industry.</li>
     <li><b>rolling_max:</b> max(train), a naive worst-case baseline.</li>
+    <li><b>ml_gbm_p998:</b> gradient-boosted quantile regression at α = 0.998 (scikit-learn <code>GradientBoostingRegressor</code>, loss = "quantile"), features are a 7-day rolling mean, std, max, and 99th percentile at the same hour-of-day.</li>
+    <li><b>ewmq_p998:</b> exponentially-weighted moving 99.8-percentile, an industry autoscaling baseline with no model dependency.</li>
   </ul>
   <p>Metrics per bin, aggregated across bins: coverage rate (fraction of test samples at or below the predicted ceiling; target ≥ 99.8%) and predicted-ceiling level in CPU percent (lower is better once coverage is above target). Table 4 reports the pooled results.</p>
 
@@ -363,12 +365,16 @@
         <tr><td><code>empirical_p998</code></td> <td class="n">97.80%</td><td class="n">3.79</td><td class="n">97.65%</td><td class="n">4.53</td></tr>
         <tr><td><code>gauss_meanksd</code></td>  <td class="n">97.78%</td><td class="n">3.01</td><td class="n">97.08%</td><td class="n">3.36</td></tr>
         <tr><td><code>rolling_max</code></td>    <td class="n">98.06%</td><td class="n">4.20</td><td class="n">98.08%</td><td class="n">4.93</td></tr>
+        <tr><td><code>ml_gbm_p998</code></td>    <td class="n">94.95%</td><td class="n">2.73</td><td class="n">93.62%</td><td class="n">3.06</td></tr>
+        <tr><td><code>ewmq_p998</code></td>      <td class="n">84.34%</td><td class="n">2.01</td><td class="n">79.50%</td><td class="n">2.15</td></tr>
       </tbody>
     </table>
-    <figcaption><b>Table 4.</b> Sizing accuracy on held-out data (last 6 days). Coverage is the mean fraction of test samples at or below the predicted ceiling across bins (target ≥ 99.8%). Ceiling is the median predicted ceiling in CPU%. Share-at-target (fraction of bins where coverage ≥ 99.8%) is 83.0% for <code>lognorm_ctop</code> on fastStorage vs. 76.1% for <code>gauss_meanksd</code>, 78.2% for <code>empirical_p998</code>, and 82.5% for <code>rolling_max</code>.</figcaption>
+    <figcaption><b>Table 4.</b> Sizing accuracy on held-out data (last 6 days). Coverage is the mean fraction of test samples at or below the predicted ceiling across bins (target ≥ 99.8%). Ceiling is the median predicted ceiling in CPU%. Share-at-target (fraction of bins where coverage ≥ 99.8%) is 83.0% for <code>lognorm_ctop</code> on fastStorage vs. 60.3% for <code>ml_gbm_p998</code>, 22.2% for <code>ewmq_p998</code>, and 76.1% / 78.2% / 82.5% for the other three baselines.</figcaption>
   </figure>
 
-  <p>On both traces, <code>lognorm_ctop</code> attains the highest coverage among methods with a comparable ceiling: on fastStorage it hits the 99.8% target in 83.0% of bins vs. 76.1% for the Gaussian assumption, at a lower median ceiling than <code>rolling_max</code> (3.33% vs. 4.20%). <code>gauss_meanksd</code> achieves the lowest median ceiling on both traces but under-covers, which is exactly the failure mode a symmetric assumption predicts on right-skewed data. <code>rolling_max</code> covers well but at a large cost premium (median relative over-provisioning 19.5% on fastStorage, 16.3% on Rnd) that would compound across a large fleet.</p>
+  <p>On both traces, <code>lognorm_ctop</code> attains the highest coverage among methods with a comparable ceiling: on fastStorage it hits the 99.8% target in 83.0% of bins vs. 76.1% for the Gaussian assumption, at a lower median ceiling than <code>rolling_max</code> (3.33% vs. 4.20%). <code>gauss_meanksd</code> achieves the lowest median ceiling among the physics-based methods but under-covers, the failure mode a symmetric assumption predicts on right-skewed data. <code>rolling_max</code> covers well but at a large cost premium (median relative over-provisioning 19.5% on fastStorage, 16.3% on Rnd) that would compound across a large fleet.</p>
+
+  <p>The two data-driven baselines are both dominated on coverage. Quantile GBM picks lower ceilings than <code>lognorm_ctop</code> on both traces but reaches the target confidence in only 60.3% (fastStorage) and 48.7% (Rnd) of bins, versus 83.0% and 76.4% for the parametric ceiling. The failure mode is the standard one for quantile regression at extreme percentiles: with tens of per-day samples per bin, the empirical count in the tail is too small for the learner to fit the 99.8th percentile without smoothing it downward across days. EWMQ is worse still (22.2% at target on fastStorage). The physical scaling of the log-normal ceiling, whose tail behaviour is set by the whole fitted distribution rather than the sparse tail alone, is the mechanism that closes this gap.</p>
 
   <h2 class="sec"><span class="num">8</span>SLA-aware sizing with public pricing</h2>
   <p>The decision-support layer combines the per-bin capacity distribution <i class="v">P<sub>c</sub></i>(<i class="v">C</i> | <i class="v">E</i>) with an event-arrival histogram <i class="v">P<sub>e</sub></i>(<i class="v">E</i> | <i class="v">T</i>) and a service-success curve <i class="v">P<sub>s</sub></i>(<i class="v">C</i>) to produce expected succeeded events <i class="v">S</i>, expected failed events <i class="v">F</i>, expected availability <i class="v">A</i> = <i class="v">S</i>/(<i class="v">S</i>+<i class="v">F</i>), and expected revenue</p>

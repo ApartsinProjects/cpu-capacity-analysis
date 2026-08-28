@@ -411,6 +411,12 @@ four sizing methods on train and evaluate on test:
   \item \textbf{empirical\_p998}: the 99.8th empirical percentile of train.
   \item \textbf{gauss\_meanksd}: $\text{mean}(\text{train}) + 3\,\text{std}(\text{train})$, a Gaussian assumption often used in industry.
   \item \textbf{rolling\_max}: $\max(\text{train})$, a naive worst-case baseline.
+  \item \textbf{ml\_gbm\_p998}: gradient-boosted quantile regression at
+        $\alpha = 0.998$ (scikit-learn \texttt{GradientBoostingRegressor},
+        loss $=$ ``quantile''), features are a 7-day rolling mean, std, max,
+        and 99th percentile at the same hour-of-day.
+  \item \textbf{ewmq\_p998}: exponentially-weighted moving 99.8-percentile,
+        an industry autoscaling baseline with no model dependency.
 \end{itemize}
 Metrics per bin: coverage rate (fraction of test samples at or below the
 predicted ceiling; target $\geq 99.8\%$), and predicted-ceiling level in CPU
@@ -430,6 +436,8 @@ Table~\ref{tab:sizing} reports the pooled results.
     empirical\_p998     & \SzFsEPMeanCov{}\% & \SzFsEPMedCeiling{} & \SzEPMeanCov{}\% & \SzEPMedCeiling{} \\
     gauss\_meanksd      & \SzFsGAMeanCov{}\% & \SzFsGAMedCeiling{} & \SzGAMeanCov{}\% & \SzGAMedCeiling{} \\
     rolling\_max        & \SzFsRMMeanCov{}\% & \SzFsRMMedCeiling{} & \SzRMMeanCov{}\% & \SzRMMedCeiling{} \\
+    ml\_gbm\_p998       & \SzFsMLGBMeanCov{}\% & \SzFsMLGBMedCeiling{} & \SzRnMLGBMeanCov{}\% & \SzRnMLGBMedCeiling{} \\
+    ewmq\_p998          & \SzFsEWMQMeanCov{}\% & \SzFsEWMQMedCeiling{} & \SzRnEWMQMeanCov{}\% & \SzRnEWMQMedCeiling{} \\
     \bottomrule
   \end{tabular}
   \caption{Sizing accuracy on held-out data (last 6 days). Coverage is the
@@ -444,11 +452,25 @@ methods with a comparable ceiling: on fastStorage it hits the 99.8\% target
 in \SzFsLNShareTarget{}\% of bins vs.\ \SzFsGAShareTarget{}\% for the
 Gaussian assumption, at a lower median ceiling than \texttt{rolling\_max}
 (\SzFsLNMedCeiling{} vs.\ \SzFsRMMedCeiling{}). \texttt{gauss\_meanksd}
-achieves the lowest median ceiling on both traces but under-covers, which is
-exactly the failure mode a symmetric assumption predicts on right-skewed
-data. \texttt{rolling\_max} covers well but at a large cost premium
-(median relative over-provisioning \SzFsRMMedRelCost{}\% on fastStorage,
-\SzRMMedRelCost{}\% on Rnd) that would compound across a large fleet.
+achieves the lowest median ceiling among the physics-based methods but
+under-covers, which is exactly the failure mode a symmetric assumption
+predicts on right-skewed data. \texttt{rolling\_max} covers well but at a
+large cost premium (median relative over-provisioning
+\SzFsRMMedRelCost{}\% on fastStorage, \SzRMMedRelCost{}\% on Rnd) that
+would compound across a large fleet.
+
+The two data-driven baselines are both dominated on coverage. Quantile GBM
+picks lower ceilings than \texttt{lognorm\_ctop} on both traces but reaches
+the target confidence in only \SzFsMLGBShareTarget{}\% (fastStorage) and
+\SzRnMLGBShareTarget{}\% (Rnd) of bins, versus \SzFsLNShareTarget{}\% and
+\SzLNShareTarget{}\% for the parametric ceiling. The failure mode is the
+standard one for quantile regression at extreme percentiles: with tens of
+per-day samples per bin, the empirical count in the tail is too small for
+the learner to fit the 99.8th percentile without smoothing it downward
+across days. EWMQ is worse still (\SzFsEWMQShareTarget{}\% at target). The
+physical scaling of the log-normal ceiling, whose tail behaviour is set by
+the whole fitted distribution rather than the sparse tail alone, is the
+mechanism that closes this gap.
 
 \section{SLA-Aware Sizing with Public Pricing}
 \label{sec:economics}

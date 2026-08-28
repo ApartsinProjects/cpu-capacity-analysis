@@ -1,0 +1,34 @@
+{
+  "fastStorage": {
+    "ml_gbm_p998": {
+      "n_bins": 3293,
+      "mean_coverage": 0.9495201185370442,
+      "share_at_target": 0.6030974795019739,
+      "median_ceiling_pct": 2.7337189032226337,
+      "median_rel_cost": 0.05379221625897088
+    },
+    "ewmq_p998": {
+      "n_bins": 3293,
+      "mean_coverage": 0.843358620006817,
+      "share_at_target": 0.22228970543577284,
+      "median_ceiling_pct": 2.0072032659572323,
+      "median_rel_cost": -0.09305681895094638
+    }
+  },
+  "rnd": {
+    "ml_gbm_p998": {
+      "n_bins": 3786,
+      "mean_coverage": 0.9362101291196028,
+      "share_at_target": 0.48705758055995774,
+      "median_ceiling_pct": 3.0560470408029454,
+      "median_rel_cost": 0.0103040376454857
+    },
+    "ewmq_p998": {
+      "n_bins": 3786,
+      "mean_coverage": 0.7949707931538033,
+      "share_at_target": 0.1415742208135235,
+      "median_ceiling_pct": 2.154496563831761,
+      "median_rel_cost": -0.1395436644096765
+    }
+  }
+}
