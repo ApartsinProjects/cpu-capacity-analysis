@@ -1,0 +1,335 @@
+<title>Probabilistic CPU Capacity Estimation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --paper: #ffffff;
+    --ink: #1e2126;
+    --ink-2: #545a63;
+    --ink-3: #878d96;
+    --accent: #33527e;
+    --rule: #dcdcda;
+    --panel: #f6f6f4;
+    --s1: #3d65b8; /* app tier avg */
+    --s2: #8a5bb8; /* app tier max */
+    --s3: #c2542c; /* db tier avg */
+    --s4: #0f9268; /* db tier max */
+    --grid: #e6e6e3;
+  }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
+    font-size: 1.04rem;
+    line-height: 1.62;
+    margin: 0;
+    padding: 3.5rem 1.25rem 5rem;
+  }
+  article { max-width: 46rem; margin: 0 auto; }
+  .eyebrow {
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 1rem;
+  }
+  h1 {
+    font-size: 2.05rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0 0 0.75rem;
+    text-wrap: balance;
+  }
+  .byline {
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 0.85rem;
+    color: var(--ink-2);
+    margin: 0 0 2.25rem;
+  }
+  .abstract {
+    border-top: 2px solid var(--ink);
+    border-bottom: 1px solid var(--rule);
+    padding: 1.25rem 0 1.4rem;
+    margin: 0 0 2.5rem;
+  }
+  .abstract h2 {
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    margin: 0 0 0.6rem;
+  }
+  .abstract p { margin: 0; font-size: 0.98rem; }
+  h2.sec {
+    font-size: 1.28rem;
+    font-weight: 700;
+    margin: 2.4rem 0 0.7rem;
+    text-wrap: balance;
+  }
+  h2.sec .num, h3 .num { color: var(--accent); margin-right: 0.55em; font-variant-numeric: tabular-nums; }
+  h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 1.6rem 0 0.5rem;
+  }
+  p { margin: 0 0 1rem; text-align: justify; hyphens: auto; }
+  li { text-align: justify; hyphens: auto; }
+  .byline, .eq, .panel-title, figcaption, .legend { text-align: left; hyphens: none; }
+  .eq { text-align: center; }
+  .eq {
+    display: block;
+    text-align: center;
+    font-style: italic;
+    margin: 1.1rem 0 1.2rem;
+    font-size: 1.05rem;
+  }
+  .eq .var, i.v { font-style: italic; }
+  sub, sup { font-size: 0.7em; }
+  ul { margin: 0 0 1rem; padding-left: 1.3rem; }
+  li { margin-bottom: 0.35rem; }
+  figure {
+    margin: 1.8rem 0 2rem;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 1.1rem 1.1rem 0.9rem;
+    overflow-x: auto;
+  }
+  figcaption {
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--ink-2);
+    margin-top: 0.6rem;
+  }
+  figcaption b { color: var(--ink); font-weight: 600; }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.1rem;
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 0.78rem;
+    color: var(--ink-2);
+    margin-bottom: 0.5rem;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .swatch { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+  svg { display: block; max-width: 100%; height: auto; }
+  svg text {
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 11px;
+    fill: var(--ink-2);
+  }
+  svg .dlabel { font-size: 11px; font-weight: 600; }
+  .panels { display: flex; gap: 1.2rem; flex-wrap: wrap; }
+  .panels > div { flex: 1 1 260px; min-width: 240px; }
+  .panel-title {
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 0.3rem;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 0.86rem;
+    font-variant-numeric: tabular-nums;
+    margin: 1.2rem 0 1.4rem;
+  }
+  th, td { text-align: left; padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--rule); }
+  th {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    border-bottom: 2px solid var(--ink);
+  }
+  td.n { text-align: right; }
+  th.n { text-align: right; }
+  a { color: var(--accent); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<article>
+  <p class="eyebrow">Technical report · Capacity planning</p>
+  <h1>Probabilistic CPU Capacity Estimation from Transaction Load</h1>
+  <p class="byline">Capacity-planning study · Transaction-processing system, application and database tiers</p>
+
+  <div class="abstract">
+    <h2>Abstract</h2>
+    <p>Sizing hardware capacity for a complex, multi-tier transaction-processing system is a costly trade-off: over-provisioning wastes infrastructure budget, while under-provisioning drops billing transactions and exposes the operator to contractual fines for missed service levels. Sound sizing therefore requires weighing hardware cost estimates against the expected penalty cost of overload, which in turn requires knowing the probability of overload at a given load. This report presents a probabilistic method for that question: given a transaction rate, what is the probability that CPU utilization stays below the level required to meet service-level objectives? Transaction arrivals were modeled as a Poisson process, and CPU utilization conditional on load with a log-normal distribution derived from a multiplicative-overhead argument. Model parameters were learned from one month of peak-hour production measurements. The fitted model reproduced the observed utilization data and yields, for any utilization budget <i class="v">B</i> and candidate transaction rate <i class="v">N</i><sub>0</sub>, an estimate of <i class="v">P</i>(<i class="v">C</i> &lt; <i class="v">B</i> | <i class="v">N</i> = <i class="v">N</i><sub>0</sub>). A controlled load experiment at 70%, 100%, and 120% of nominal load supported the modeling choices and revealed a non-CPU bottleneck at extreme load. The method is delivered as an interactive spreadsheet tool for operations teams.</p>
+  </div>
+
+  <h2 class="sec"><span class="num">1</span>Problem statement</h2>
+  <p>Let <i class="v">C</i> denote CPU utilization measured over a 5-second interval, <i class="v">N</i> the average number of transactions per hour, <i class="v">B</i> the maximum CPU utilization at which service-level agreements are still met, and <i class="v">A</i> a tolerance threshold. The capacity-planning task is:</p>
+  <p class="eq">find the maximum <i class="v">N</i><sub>0</sub> such that&nbsp; <i class="v">P</i>(<i class="v">C</i> &lt; <i class="v">B</i> | <i class="v">N</i> = <i class="v">N</i><sub>0</sub>) &gt; 1 − <i class="v">A</i></p>
+  <p>In words: the highest sustained transaction rate for which the system stays under its CPU budget with the required confidence. A probabilistic formulation is needed because utilization at a fixed load is not a single number; short-interval measurements fluctuate, and the SLA is violated by the tail of that fluctuation, not by its mean.</p>
+
+  <h2 class="sec"><span class="num">2</span>Load model</h2>
+  <p>The hourly rate <i class="v">N</i> is converted to the 5-second measurement scale as <i class="v">N</i><sub>5</sub> = <i class="v">N</i> / (60 · 12). The number of transactions <i class="v">n</i> arriving in a given 5-second interval is a random variable, modeled as Poisson:</p>
+  <p class="eq"><i class="v">n</i> ~ Poisson(<i class="v">N</i><sub>5</sub>) &nbsp;≈&nbsp; Normal(μ = <i class="v">N</i><sub>5</sub>,&nbsp; σ² = <i class="v">N</i><sub>5</sub>)</p>
+  <p>with the normal approximation applying at the arrival counts of interest. Supporting analysis of the production traces shows a near-uniform distribution of transaction volume across days, across weekdays, and of peak-hour transaction counts from day to day, which is consistent with treating the peak-hour arrival process as homogeneous.</p>
+
+  <h2 class="sec"><span class="num">3</span>CPU utilization model</h2>
+  <p>Suppose the number of concurrent transactions increases by Δ<i class="v">n</i>, raising CPU load by Δ<i class="v">C</i>. The increment is larger when the system is already busy, because context-switch overhead grows with utilization. The simplest model with this property makes the increment proportional to the current level:</p>
+  <p class="eq">Δ<i class="v">C</i> / Δ<i class="v">n</i> ∝ α<i class="v">C</i></p>
+  <p>Rearranging gives Δ<i class="v">C</i> / <i class="v">C</i> ∝ α Δ<i class="v">n</i>, and integrating yields:</p>
+  <p class="eq">log <i class="v">C</i> = α<i class="v">n</i> + β</p>
+  <p>Since <i class="v">n</i> is approximately normal (Section 2), log <i class="v">C</i> is normal, and <i class="v">C</i> follows a standard log-normal distribution. The two parameters α and β are learned from data.</p>
+
+  <h2 class="sec"><span class="num">4</span>Parameter estimation</h2>
+  <p>Parameters were fitted on one month of production measurements from a single host:</p>
+  <ul>
+    <li>CPU utilization samples collected during the daily peak hour over 30 days (roughly 310 five-second observations);</li>
+    <li>daily peak-hour transaction counts over the same 30 days (30 observations).</li>
+  </ul>
+  <p>The combined set of about 340 points determines the log-normal parameters by regression of log <i class="v">C</i> on <i class="v">n</i>. The fitted distribution reproduces the observed utilization data well.</p>
+
+  <h2 class="sec"><span class="num">5</span>Controlled load experiment</h2>
+  <h3><span class="num">5.1</span>Setup</h3>
+  <p>A load experiment on a test environment ran four configurations: 70% of nominal load for 1 hour, 70% for 17 hours (with one missed hour), 100% for 4 hours, and 120% for 1 hour. CPU utilization was recorded on the database tier every 5 minutes (as averages, per the monitoring configuration) and on the application tier as hourly average, minimum, and maximum.</p>
+
+  <h3><span class="num">5.2</span>Observed utilization</h3>
+  <figure>
+    <div class="legend">
+      <span><span class="swatch" style="background:var(--s1)"></span>App tier, average</span>
+      <span><span class="swatch" style="background:var(--s2)"></span>App tier, max</span>
+      <span><span class="swatch" style="background:var(--s3)"></span>DB tier, average</span>
+      <span><span class="swatch" style="background:var(--s4)"></span>DB tier, max</span>
+    </div>
+    <svg viewBox="0 0 640 355" role="img" aria-label="Line chart of CPU utilization versus offered load for application and database tiers. All series rise from 70 to 100 percent load and fall at 120 percent load.">
+      <g stroke="var(--grid)" stroke-width="1">
+        <line x1="50" y1="320" x2="600" y2="320"/>
+        <line x1="50" y1="242.5" x2="600" y2="242.5"/>
+        <line x1="50" y1="165" x2="600" y2="165"/>
+        <line x1="50" y1="87.5" x2="600" y2="87.5"/>
+        <line x1="50" y1="10" x2="600" y2="10"/>
+      </g>
+      <g text-anchor="end">
+        <text x="44" y="324">0%</text>
+        <text x="44" y="246.5">20%</text>
+        <text x="44" y="169">40%</text>
+        <text x="44" y="91.5">60%</text>
+        <text x="44" y="14">80%</text>
+      </g>
+      <g text-anchor="middle">
+        <text x="95.8" y="340">70%</text>
+        <text x="370.8" y="340">100%</text>
+        <text x="554.2" y="340">120%</text>
+        <text x="325" y="354" fill="var(--ink-3)">offered load (share of nominal)</text>
+      </g>
+      <g fill="none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+        <polyline stroke="var(--s2)" points="95.8,68.1 370.8,64.2 554.2,180.5"/>
+        <polyline stroke="var(--s1)" points="95.8,99.1 370.8,75.9 554.2,180.5"/>
+        <polyline stroke="var(--s4)" points="95.8,230.9 370.8,106.9 554.2,227"/>
+        <polyline stroke="var(--s3)" points="95.8,273.5 370.8,232.8 554.2,269.6"/>
+      </g>
+      <g stroke="var(--paper)" stroke-width="2">
+        <circle cx="95.8" cy="68.1" r="4" fill="var(--s2)"><title>App max · 70% load · 65%</title></circle>
+        <circle cx="370.8" cy="64.2" r="4" fill="var(--s2)"><title>App max · 100% load · 66%</title></circle>
+        <circle cx="554.2" cy="180.5" r="4" fill="var(--s2)"><title>App max · 120% load · 36%</title></circle>
+        <circle cx="95.8" cy="99.1" r="4" fill="var(--s1)"><title>App avg · 70% load · 57%</title></circle>
+        <circle cx="370.8" cy="75.9" r="4" fill="var(--s1)"><title>App avg · 100% load · 63%</title></circle>
+        <circle cx="554.2" cy="180.5" r="4" fill="var(--s1)"><title>App avg · 120% load · 36%</title></circle>
+        <circle cx="95.8" cy="230.9" r="4" fill="var(--s4)"><title>DB max · 70% load · 23%</title></circle>
+        <circle cx="370.8" cy="106.9" r="4" fill="var(--s4)"><title>DB max · 100% load · 55%</title></circle>
+        <circle cx="554.2" cy="227" r="4" fill="var(--s4)"><title>DB max · 120% load · 24%</title></circle>
+        <circle cx="95.8" cy="273.5" r="4" fill="var(--s3)"><title>DB avg · 70% load · 12%</title></circle>
+        <circle cx="370.8" cy="232.8" r="4" fill="var(--s3)"><title>DB avg · 100% load · 22.5%</title></circle>
+        <circle cx="554.2" cy="269.6" r="4" fill="var(--s3)"><title>DB avg · 120% load · 13%</title></circle>
+      </g>
+      <g class="dlabel">
+        <text x="562" y="172" fill="var(--s1)">app</text>
+        <text x="562" y="262" fill="var(--s3)">db</text>
+      </g>
+    </svg>
+    <figcaption><b>Figure 1.</b> Measured CPU utilization versus offered load. Utilization on both tiers rises from 70% to 100% load, then falls sharply at 120% load: application-tier average drops from 63% to 36% and database-tier max from 55% to 24%. Values read from 5-minute (database) and hourly (application) monitoring aggregates.</figcaption>
+  </figure>
+  <p>The drop at 120% load means CPU stops being the limiting resource at extreme load: throughput is capped elsewhere, with network or disk I/O the leading candidates, and the CPUs idle while work queues upstream. Measurements at 120% load therefore do not describe the CPU-vs-load relationship and are excluded from model fitting.</p>
+
+  <h3><span class="num">5.3</span>Candidate models</h3>
+  <p>The experiment produced too few distinct load levels to validate a complex model directly, so two candidate models constrained by prior experience were compared, both fitted on the 70% and 100% configurations:</p>
+  <ul>
+    <li><b>Model A (normal/linear).</b> CPU utilization at a fixed load is normally distributed; the mean follows a two-point linear regression on load.</li>
+    <li><b>Model B (log-normal).</b> CPU utilization at a fixed load follows the log-normal distribution of Section 3, previously validated on a separate class of production load events.</li>
+  </ul>
+
+  <figure>
+    <div class="panels">
+      <div>
+        <p class="panel-title">Model A · normal / linear</p>
+        <svg viewBox="0 0 320 300" role="img" aria-label="Model A: mean CPU line from 57 to 63 percent with a wide plus-minus three sigma band from about 22 to 91 percent.">
+          <g stroke="var(--grid)" stroke-width="1">
+            <line x1="45" y1="260" x2="300" y2="260"/>
+            <line x1="45" y1="198.8" x2="300" y2="198.8"/>
+            <line x1="45" y1="137.5" x2="300" y2="137.5"/>
+            <line x1="45" y1="76.3" x2="300" y2="76.3"/>
+            <line x1="45" y1="15" x2="300" y2="15"/>
+          </g>
+          <g text-anchor="end">
+            <text x="39" y="264">0%</text>
+            <text x="39" y="202.8">25%</text>
+            <text x="39" y="141.5">50%</text>
+            <text x="39" y="80.3">75%</text>
+            <text x="39" y="19">100%</text>
+          </g>
+          <g text-anchor="middle">
+            <text x="45" y="280">70%</text>
+            <text x="300" y="280">100%</text>
+            <text x="172" y="297" fill="var(--ink-3)">offered load</text>
+          </g>
+          <g fill="none" stroke-width="2" stroke-linecap="round">
+            <polyline stroke="var(--s1)" stroke-opacity="0.55" stroke-dasharray="6 5" points="45,37 300,76.3"/>
+            <polyline stroke="var(--s1)" points="45,120.4 300,105.7"/>
+            <polyline stroke="var(--s1)" stroke-opacity="0.55" stroke-dasharray="6 5" points="45,204.9 300,136.3"/>
+          </g>
+          <text class="dlabel" x="132" y="60" fill="var(--s1)" fill-opacity="0.8">±3σ band</text>
+        </svg>
+      </div>
+      <div>
+        <p class="panel-title">Model B · log-normal</p>
+        <svg viewBox="0 0 320 300" role="img" aria-label="Model B: mean CPU line from 57 to 63 percent with a narrow plus-minus three sigma band that tightens toward 100 percent load.">
+          <g stroke="var(--grid)" stroke-width="1">
+            <line x1="45" y1="260" x2="300" y2="260"/>
+            <line x1="45" y1="198.8" x2="300" y2="198.8"/>
+            <line x1="45" y1="137.5" x2="300" y2="137.5"/>
+            <line x1="45" y1="76.3" x2="300" y2="76.3"/>
+            <line x1="45" y1="15" x2="300" y2="15"/>
+          </g>
+          <g text-anchor="end">
+            <text x="39" y="264">0%</text>
+            <text x="39" y="202.8">25%</text>
+            <text x="39" y="141.5">50%</text>
+            <text x="39" y="80.3">75%</text>
+            <text x="39" y="19">100%</text>
+          </g>
+          <g text-anchor="middle">
+            <text x="45" y="280">70%</text>
+            <text x="300" y="280">100%</text>
+            <text x="172" y="297" fill="var(--ink-3)">offered load</text>
+          </g>
+          <g fill="none" stroke-width="2" stroke-linecap="round">
+            <polyline stroke="var(--s1)" stroke-opacity="0.55" stroke-dasharray="6 5" points="45,103.2 300,104.9"/>
+            <polyline stroke="var(--s1)" points="45,119.9 300,105.7"/>
+            <polyline stroke="var(--s1)" stroke-opacity="0.55" stroke-dasharray="6 5" points="45,136.3 300,107.4"/>
+          </g>
+          <text class="dlabel" x="120" y="93" fill="var(--s1)" fill-opacity="0.8">±3σ band</text>
+        </svg>
+      </div>
+    </div>
+    <figcaption><b>Figure 2.</b> Application-tier mean CPU (solid) with ±3σ envelopes (dashed) under the two candidate models, fitted on the 70% and 100% load configurations and drawn on a common 0 to 100% scale. Model A's normal assumption produces a wide envelope, roughly 22% to 91% at 70% load; Model B's log-normal envelope is far tighter and narrows toward 100% load. The narrower variance estimate at 100% load partly reflects the shorter measurement window (4 hours at 100% versus 17 hours at 70%).</figcaption>
+  </figure>
+
+  <h2 class="sec"><span class="num">6</span>Results and deliverable</h2>
+  <p>The fitted log-normal model explains the observed production data and supports direct computation of <i class="v">P</i>(<i class="v">C</i> &lt; <i class="v">B</i> | <i class="v">N</i> = <i class="v">N</i><sub>0</sub>) for any utilization budget <i class="v">B</i> and candidate rate <i class="v">N</i><sub>0</sub>. Inverting this relationship answers the original question: the maximum sustained transaction rate that keeps CPU under budget with confidence 1 − <i class="v">A</i>.</p>
+  <p>The method is packaged as an interactive spreadsheet tool: an operator enters a target transaction rate (transactions per second) and a CPU budget, and the tool returns the probability of exceeding that budget. This gives capacity planners a direct, quantitative basis for sizing decisions and headroom policies.</p>
+
+  <h2 class="sec"><span class="num">7</span>Scope</h2>
+  <p>The model is fitted per host and per workload; parameters α and β are re-learned for each deployment from about a month of peak-hour measurements. It describes the regime where CPU is the binding resource; the load experiment places the boundary of that regime between 100% and 120% of nominal load for the system studied, beyond which capacity is governed by network or disk I/O and a different model applies.</p>
+</article>
