@@ -201,12 +201,30 @@ which by the three-sigma rule covers $C$ with probability $0.998$.
 \paragraph{Parameter-scaling law.}
 Fitting~\eqref{eq:logCmodel} directly implies
 $\mu_{\log C}(\lambda) = \alpha\lambda + \beta$, where $\lambda = N_5$ is the
-Poisson intensity. The variance of $\log C$ under the mechanism is set by the
-variance of the underlying Poisson count; for large $\lambda$ this gives
-$\sigma_{\log C}(\lambda) \approx \gamma/\sqrt{\lambda} + \delta$, so
-$\sigma$ decreases as $1/\sqrt{\lambda}$ with a floor $\delta$ that captures
-non-arrival-related variance (network jitter, background daemons).
-Section~\ref{sec:scaling} tests this law empirically.
+Poisson intensity. Adding a per-window multiplicative-noise term
+$\varepsilon \sim \mathcal{N}(0, \sigma_\varepsilon^2)$ independent of $n$
+(context-switch overhead, GC pauses, background daemons) gives
+\begin{equation}
+  \operatorname{Var}(\log C) \;=\; \alpha^2\,\operatorname{Var}(n)
+  \;+\; \sigma_\varepsilon^2 \;=\; \alpha^2 \lambda + \sigma_\varepsilon^2,
+\end{equation}
+so
+\begin{equation}
+  \sigma_{\log C}(\lambda) \;=\; \sqrt{\,\alpha^2 \lambda + \sigma_\varepsilon^2\,}
+  \label{eq:sigmascaling}
+\end{equation}
+which grows monotonically with $\lambda$ from a $\lambda=0$ floor of
+$\sigma_\varepsilon$ toward $\alpha\sqrt{\lambda}$ for
+$\alpha^2\lambda \gg \sigma_\varepsilon^2$. Section~\ref{sec:scaling} fits
+both this form and $\mu_{\log C}(\lambda) = \alpha\lambda + \beta$ empirically.
+
+An earlier version of this derivation stated $\sigma_{\log C} \approx
+\gamma/\sqrt{\lambda} + \delta$, which is the coefficient of variation
+$\sigma_{\log C}/\mu_{\log C}$ rather than $\sigma_{\log C}$ itself; that
+form gives the wrong direction and does not follow from the mechanism.
+Equation~\eqref{eq:sigmascaling} is the correct standard-deviation form,
+verified with a controlled simulation
+(see \texttt{scoping/clt\_sim.py}).
 
 \section{Datasets}
 \label{sec:datasets}
@@ -334,25 +352,24 @@ of bins on fastStorage and \RnCvmShareLN{}\% on Rnd for $W^2$).
 
 The per-bin fit yields, for every VM, a set of $(\lambda, \mu_{\log C},
 \sigma_{\log C})$ triples where $\lambda$ is the mean 5-second event count
-inferred from the readings and the load model. We fit the two parts of the
-scaling law per VM by ordinary least squares:
-$\hat\mu(\lambda) = \hat\alpha\lambda + \hat\beta$ and
-$\hat\sigma(\lambda) = \hat\gamma/\sqrt{\lambda} + \hat\delta$. We report the
-distribution of goodness-of-fit ($R^2$) across VMs and the systematic
-residual pattern (Figure~\ref{fig:scaling}, TODO).
+inferred from the readings and the load model. Bitbrains has no
+transaction-count column, so we use mean network-received throughput per
+bin as a load-index proxy for $\lambda$; the proxy quality is discussed
+below. We fit the $\mu$ clause by ordinary least squares
+$\hat\mu(\lambda) = \hat\alpha\lambda + \hat\beta$, and the $\sigma$ clause
+under two functional forms: the (incorrect) form from an earlier draft of
+this paper $\hat\sigma(\lambda) = \hat\gamma/\sqrt{\lambda} + \hat\delta$
+and the correct mechanism-derived form from
+Equation~\eqref{eq:sigmascaling} $\hat\sigma(\lambda) = \sqrt{\hat\alpha^2
+\lambda + \hat\sigma_\varepsilon^2}$.
 
-We fit both parts on \ScalFsNVms{} fastStorage VMs and \ScalRnNVms{} Rnd VMs
-(minimum six hour-of-day bins per VM). The aggregate is a mixed picture that
-deserves splitting. Across VMs, the median $R^2$ of the $\mu(\lambda)$ fit
-is \ScalFsMuMedR{} (fastStorage) and \ScalRnMuMedR{} (Rnd), the median of
-the $\sigma(\lambda)$ fit is \ScalFsSigMedR{} / \ScalRnSigMedR{}, and the
-median $\hat\alpha$ is small and positive (\ScalFsAlphaMed{} /
-\ScalRnAlphaMed{}) as predicted, but the median $\hat\gamma$ is
-\emph{negative} (\ScalFsGammaMed{} / \ScalRnGammaMed{}) rather than
-positive. Following the project convention of inspecting failing points
+On \ScalFsNVms{} fastStorage VMs and \ScalRnNVms{} Rnd VMs (minimum six
+hour-of-day bins per VM), the aggregate is a mixed picture that deserves
+splitting. Following the project convention of inspecting failing points
 before accepting an aggregate, we ran a diagnostic
-(see \texttt{scoping/SCALING\_DIAGNOSIS.md}) that separates the two clauses
-of the law and tests the load-proxy hypothesis directly.
+(\texttt{scoping/SCALING\_DIAGNOSIS.md}, and a deeper decomposition in
+\texttt{scoping/SIGMA\_ROOTCAUSE.md}) that separates the two clauses of
+the law and tests candidate mechanisms for the $\sigma$ shape directly.
 
 \paragraph{The $\mu$ clause: directionally confirmed, proxy-limited $R^2$.}
 $\hat\alpha > 0$ on 85 to 90 percent of VMs. The low median $R^2_\mu$ hides
@@ -366,32 +383,45 @@ proxy quality and $R^2_\mu$ is $\approx 0.27$: better proxy, better $\mu$
 fit. Where the proxy carries signal and $\lambda$ varies within the day,
 the mean clause is linear with $R^2$ up to $0.98$.
 
-\paragraph{The $\sigma$ clause: refuted in direction, and not by the proxy.}
-Among VMs where the $\sigma(\lambda)$ curve fits well ($R^2_\sigma \geq
-0.5$), $\hat\gamma < 0$ in \textbf{98\%} of fastStorage VMs (51/52) and
-\textbf{100\%} of Rnd VMs (55/55). Restricted further to VMs that are
-\emph{also} strongly proxied ($\rho_{\text{CPU},\text{net}} \geq 0.5$), the
-wrong sign is unanimous (24/24 across both traces, median
-$\hat\gamma = -0.87$). A noise-driven sign error would dilute under those
-restrictions, not concentrate. The variance of $\log C$ across the bins of
-a hour-of-day panel on Bitbrains is a coherent \emph{increasing} function
-of $\lambda$: $\sigma$ grows concavely from a low-load minimum toward a
-high-load plateau, the mirror image of the $1/\sqrt{\lambda}$ prediction.
+\paragraph{The $\sigma$ clause: increases with load, at both meaning and
+magnitude.} Observed $\sigma_{\log C}$ increases with $\lambda$ on 105 of
+106 VMs in the well-fitting well-proxied cohort. This is the correct
+direction under Equation~\eqref{eq:sigmascaling}: $\sigma$ grows with
+$\lambda$, from a $\lambda=0$ floor toward $\alpha\sqrt{\lambda}$. The
+earlier fit that reported $\hat\gamma < 0$ was inverting a decreasing form
+to fit an increasing curve; that sign flip is consistent between the
+paper's original (incorrect) derivation and the direction the fitted
+$\hat\gamma$ took. Under the correct standard-deviation form, the direction
+of the empirical $\sigma(\lambda)$ is what the mechanism predicts.
 
-\paragraph{A mechanism-consistent explanation.} The $1/\sqrt{\lambda}$
-shrinkage in the derivation is a central-limit-theorem term: it dominates
-when each measurement window aggregates a small number of transactions. At
-Bitbrains's 5-minute sampling every reading already averages thousands of
-events, so the CLT term is negligible and the dispersion an hour-of-day bin
-picks up is instead dominated by day-to-day and within-hour load
-fluctuation, which is multiplicative and grows with the load level. The
-original 2011 setting (5-second windows, single transaction class) sits in
-the opposite regime, where per-window event counts are small enough for the
-CLT term to dominate. On this reading, the scaling law is not refuted in
-principle but refuted \emph{at 5-minute resolution}: the two datasets are
-in different regimes of the same mechanism. Testing the law directly
-requires paired arrival-rate and CPU data at sub-minute resolution on a
-single workload class, which no current public trace supplies at scale.
+The magnitude of the observed growth is nevertheless steeper than
+Equation~\eqref{eq:sigmascaling} alone predicts at Bitbrains's parameters.
+A separate diagnostic (\texttt{scoping/SIGMA\_ROOTCAUSE.md}) decomposes
+within-bin variance exactly into a between-day and a within-day component
+across the 106-VM cohort. On the load-conditional variance increase, the
+within-day (sub-hour burstiness) component accounts for a median 65\% and
+the between-day (level shifts) component 35\%; both components are positively
+correlated with $\lambda$ in about 90\% of VMs. Positive skew of $\log C$
+grows from about 0.33 at low load to 1.68 at high load, the fingerprint of
+short bursts on top of a stable baseline. Alternative explanations were
+ruled out: bimodality is ubiquitous (63\% of bins) but not correlated with
+load, so mode switching is not the driver; saturation is excluded (median
+peak p95 CPU is 4\%, only 14 of 106 VMs ever log a sample above 90\%);
+disk-I/O correlation with $\sigma$ is essentially zero.
+
+\paragraph{Interpretation.} At Bitbrains's 5-minute sampling each reading
+already averages thousands of events, so the pure
+Equation~\eqref{eq:sigmascaling} term $\alpha^2\lambda$ from within-window
+Poisson noise is small; the measured dispersion is dominated by the
+load-proportional fluctuation of demand itself (sub-hour burstiness plus
+day-to-day level shifts, in roughly a 2:1 ratio on this cohort), which is
+consistent with a mechanism in which $\lambda$ itself has a
+load-proportional variance component and not merely the arrival count at
+fixed $\lambda$. Testing the arrival-only mechanism against the
+demand-fluctuation extension in the same dataset requires paired arrival-
+rate and CPU data at sub-minute resolution on a single workload class,
+which no current public trace supplies at scale; a concrete plan for such
+a test on Google Borg data is written up in \texttt{scoping/BORG\_PLAN.md}.
 
 \section{Sizing Accuracy}
 \label{sec:sizing}

@@ -272,7 +272,7 @@ plt.savefig(os.path.join(HERE, "rc_bimodal_saturation.png"), dpi=180)
 plt.close()
 
 # Fig 4: sigma components vs lambda for two exemplar VMs
-ex = [("fastStorage", "1025.csv"), ("fastStorage", "1003.csv")]
+ex = [("fastStorage", "1025.csv"), ("fastStorage", "1091.csv")]
 fig, axes = plt.subplots(1, 2, figsize=(9, 4))
 for ax, (label, name) in zip(axes, ex):
     B = bins[(bins["vm"] == name) & (bins["trace"] == label)].sort_values("lam")
