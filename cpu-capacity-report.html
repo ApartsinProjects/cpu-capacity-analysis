@@ -360,7 +360,7 @@
   </figure>
 
   <h2 class="sec"><span class="num">6</span>Production validation at scale</h2>
-  <p>The controlled experiment supports the modeling choice on a small number of load levels; a wider validation was carried out on a production billing platform. Data were collected from 26 rating and balancing servers over 30 days, spanning four event classes (voice, messaging, data, and replenishment). For every hour-of-day bin, per-server, we retained about 30 event totals (one per day) and about 720 five-second CPU samples, totalling roughly 21,600 CPU measurements per bin. In every bin the empirical distribution of log(CPU) is close to normal, so <i class="v">C</i> follows a log-normal distribution as in Section 3.</p>
+  <p>The controlled experiment supports the modeling choice on a small number of load levels; a wider validation was carried out on a production billing platform. Data were collected from 26 rating and balancing servers over 30 days, spanning four event classes (voice, short messaging, data, and replenishment). For every hour-of-day bin, per-server, we retained 30 hourly event totals (one per day) and 21,600 five-second CPU samples (720 per day for 30 days). In every bin the empirical distribution of log(CPU) is close to normal, so <i class="v">C</i> follows a log-normal distribution as in Section 3.</p>
   <p>Under this fit, an operational capacity ceiling is defined as</p>
   <p class="eq"><i class="v">C</i><sub>top</sub> = exp{ &nbsp;&mu;<sub>log C</sub> + 3&nbsp;&sigma;<sub>log C</sub>&nbsp; }</p>
   <p>with the mean and standard deviation of log <i class="v">C</i> computed inside the bin. By the three-sigma rule this ceiling covers <i class="v">C</i> with 99.8% probability. The exceedance function <i class="v">P</i>(<i class="v">C</i> &gt; <i class="v">c</i>) then follows directly:</p>
@@ -487,14 +487,14 @@
   <h2 class="sec"><span class="num">8</span>From capacity to economics: decision-support model</h2>
   <p>The capacity model is a probability distribution over CPU given load; a sizing decision, however, is made against revenue and penalties. To bridge the two we combine three probabilities, each estimated from data or an operating policy:</p>
   <ul>
-    <li><i class="v">P<sub>e</sub></i>(<i class="v">E</i> = <i class="v">e</i> | <i class="v">T</i> = <i class="v">t</i>) — probability of <i class="v">e</i> events arriving in the time window at hour <i class="v">t</i>-of-day (event-load histogram);</li>
-    <li><i class="v">P<sub>c</sub></i>(<i class="v">C</i> = <i class="v">c</i> | <i class="v">E</i> = <i class="v">e</i>) — probability of CPU utilization <i class="v">c</i> given <i class="v">e</i> events (the log-normal capacity model of Sections 3 and 6);</li>
-    <li><i class="v">P<sub>s</sub></i>(<i class="v">C</i> = <i class="v">c</i>) — probability that an event arriving while CPU is at <i class="v">c</i> is processed within the SLA (a service-success curve).</li>
+    <li><i class="v">P<sub>e</sub></i>(<i class="v">E</i> = <i class="v">e</i> | <i class="v">T</i> = <i class="v">t</i>): probability of <i class="v">e</i> events arriving in the time window at hour <i class="v">t</i>-of-day (event-load histogram).</li>
+    <li><i class="v">P<sub>c</sub></i>(<i class="v">C</i> = <i class="v">c</i> | <i class="v">E</i> = <i class="v">e</i>): probability of CPU utilization <i class="v">c</i> given <i class="v">e</i> events (the log-normal capacity model of Sections 3 and 6).</li>
+    <li><i class="v">P<sub>s</sub></i>(<i class="v">C</i> = <i class="v">c</i>): probability that an event arriving while CPU is at <i class="v">c</i> is processed within the SLA (a service-success curve).</li>
   </ul>
   <p>Summed over the joint distribution, these give the expected number of successful and failed events per server, and thence an expected availability ratio and an expected revenue:</p>
   <p class="eq"><i class="v">S</i> = Σ<sub><i class="v">c,e,t</i></sub> <i class="v">P<sub>s</sub></i>(<i class="v">C</i>=<i class="v">c</i>)&nbsp;<i class="v">P<sub>e</sub></i>(<i class="v">E</i>=<i class="v">e</i>|<i class="v">T</i>=<i class="v">t</i>)&nbsp;<i class="v">P<sub>c</sub></i>(<i class="v">C</i>=<i class="v">c</i>|<i class="v">E</i>=<i class="v">e</i>)</p>
   <p class="eq"><i class="v">A</i> = <i class="v">S</i> / (<i class="v">S</i> + <i class="v">F</i>) &nbsp;·&nbsp; <i class="v">R</i> = RevenueShare(<i class="v">A</i>) · ARPE · <i class="v">S</i> − Fine(<i class="v">A</i>)</p>
-  <p>where ARPE is the operator's average revenue per event and the piecewise functions RevenueShare(·) and Fine(·) encode the contract's tiered SLA schedule. Overload feeds back into revenue through <i class="v">P<sub>s</sub></i>, which was estimated on the same production data as a sharp threshold:</p>
+  <p>where ARPE is the operator's average revenue per event and the piecewise functions RevenueShare(·) and Fine(·) encode the contract's tiered SLA schedule. Overload feeds back into revenue through <i class="v">P<sub>s</sub></i>, which is encoded as a sharp threshold anchored to three CPU levels labelled by domain experts (essentially always succeeds below 90%, half of events fail at 92%, almost all fail above 95%), with intermediate values interpolated:</p>
   <figure>
     <svg viewBox="0 0 640 260" role="img" aria-label="Step-like curve of single-event failure probability rising from about zero at 90 percent CPU to one at 100 percent CPU, with a steep rise between 90 and 92 percent.">
       <g stroke="var(--grid)" stroke-width="1">
@@ -544,19 +544,19 @@
   </figure>
 
   <h2 class="sec"><span class="num">9</span>Worked example: annual sizing under contract</h2>
-  <p>To illustrate, we apply the decision-support model to a 20-server fleet handling roughly 386 billion events per year, on a contract paying $2 × 10<sup>−4</sup> per event, with a $1 M annual fine below 99% availability and a two-tier revenue share above it:</p>
+  <p>To illustrate, we apply the decision-support model to a 20-server fleet handling roughly 386 billion events per year, on a contract paying $2 × 10<sup>−4</sup> per event, with a $1 M fine when availability falls below 99% and a two-tier revenue share above it:</p>
   <table>
     <thead>
       <tr><th>Availability tier</th><th class="n">Revenue share</th><th class="n">Fine</th></tr>
     </thead>
     <tbody>
       <tr><td>&lt; 99%</td><td class="n">0%</td><td class="n">$1,000,000</td></tr>
-      <tr><td>99% – 100%</td><td class="n">2%</td><td class="n">—</td></tr>
-      <tr><td>100% (fully met)</td><td class="n">4%</td><td class="n">—</td></tr>
+      <tr><td>99% to 100%</td><td class="n">2%</td><td class="n">none</td></tr>
+      <tr><td>100% (fully met)</td><td class="n">4%</td><td class="n">none</td></tr>
     </tbody>
   </table>
-  <p>The event histogram varies from about 0.2 M events per hour off-peak to 4.7 M at the peak hour (19:00). Summing hour-by-hour, the model predicts an expected 366 successful billing dollars per server per day, or approximately $132 K per server-year and $2.64 M in expected revenue from the fleet, with residual failure probability concentrated in the two peak hours where CPU brushes 90%.</p>
-  <p>A quarterly variant of the same model was used to plan hardware growth on a mixed fleet of two server generations. Given about 5% quarterly growth in event volume and 3% growth in operator revenues, the model projects the peak-hour CPU of the older server generation from 57% at baseline to 60% by year-end. Under the same SLA contract, availability remains above 99.9% only if the fleet of the older generation grows from 15 to 18 units over four quarters. The purchase schedule is set by the first quarter in which the predicted CPU crosses the sizing threshold, rather than by a fixed headroom heuristic.</p>
+  <p>The event histogram varies from about 0.2 M events per hour off-peak to 4.7 M at the peak hour (19:00). Summing hour-by-hour, the model predicts an expected 366 successful billing dollars per server per day, or approximately $132 K per server-year and $2.64 M in expected revenue from the fleet, with residual failure probability concentrated in the peak evening hours (18:00 to 20:00) where the CPU distribution brushes 90%.</p>
+  <p>A quarterly variant of the same model was used to plan hardware growth on a mixed fleet of two server generations. Given about 5% quarterly growth in event volume and 3% growth in operator revenues, the model projects the peak-hour CPU of the older server generation rising from 57% at baseline, peaking near 61% mid-year, and settling near 60% by year-end as new units come online. Under the same SLA contract, availability stays at or above 99.9% only if the fleet of the older generation grows from 15 to 18 units over four quarters. The purchase schedule is set by the first quarter in which the predicted CPU crosses the sizing threshold, rather than by a fixed headroom heuristic.</p>
 
   <h2 class="sec"><span class="num">10</span>Deployment outcomes</h2>
   <p>The method was applied on two large service-provider deployments. On the first, it drove the hardware sizing analysis for a managed-services engagement and, by replacing a linear extrapolation with the log-normal-based ceiling, supported a reported saving on the order of $10 M in provisioned hardware over the planning horizon. On the second, it was used internally to compare pre-production soak-test results on a new site with measurements from an existing production site, giving a quantitative basis for accepting or rejecting the new site's capacity claims.</p>
