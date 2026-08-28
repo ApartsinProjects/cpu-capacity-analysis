@@ -15,7 +15,6 @@
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
-\usepackage{siunitx}
 \usepackage{hyperref}
 \usepackage{xcolor}
 \usepackage[numbers,sort&compress]{natbib}
@@ -280,6 +279,35 @@ behaviour with fitted parameters and hundreds to thousands of samples; all
 four families are rejected at similar rates, so KS is not discriminating on
 this data and AIC is the informative comparison.
 
+To probe tail fit, which is what matters for a sizing method, we also
+compute the tail-sensitive Anderson-Darling ($A^2$) and Cram\'er-von Mises
+($W^2$) statistics per bin (Table~\ref{tab:advcm}). Log-normal has the
+smallest median statistic across all three tests on both traces, confirming
+that the AIC ranking is not an artefact of one likelihood-based measure;
+per-bin plurality of best-statistic remains with log-normal (\FsCvmShareLN{}\%
+of bins on fastStorage and \RnCvmShareLN{}\% on Rnd for $W^2$).
+
+\begin{table}[t]
+  \centering
+  \small
+  \begin{tabular}{lrrrrrr}
+    \toprule
+    & \multicolumn{3}{c}{fastStorage} & \multicolumn{3}{c}{Rnd} \\
+    \cmidrule(lr){2-4}\cmidrule(lr){5-7}
+    Family     & KS         & $W^2$      & $A^2$      & KS         & $W^2$      & $A^2$ \\
+    \midrule
+    Log-normal & \FsKSMedLN & \FsCvmMedLN & \FsAdMedLN & \RnKSMedLN & \RnCvmMedLN & \RnAdMedLN \\
+    Gamma      & \FsKSMedGa & \FsCvmMedGa & \FsAdMedGa & \RnKSMedGa & \RnCvmMedGa & \RnAdMedGa \\
+    Normal     & \FsKSMedNo & \FsCvmMedNo & \FsAdMedNo & \RnKSMedNo & \RnCvmMedNo & \RnAdMedNo \\
+    Weibull    & \FsKSMedWe & \FsCvmMedWe & \FsAdMedWe & \RnKSMedWe & \RnCvmMedWe & \RnAdMedWe \\
+    \bottomrule
+  \end{tabular}
+  \caption{Median goodness-of-fit statistics per family across hourly bins.
+           Smaller is better. Log-normal wins on median on every test on
+           both traces.}
+  \label{tab:advcm}
+\end{table}
+
 \begin{table}[t]
   \centering
   \small
@@ -416,8 +444,45 @@ three public schedules:
         below 99.0\%, 100\% below 95.0\%~\cite{azurevmsla}.
 \end{itemize}
 
-\emph{[Per-provider revenue delta between the log-normal sizing and each
-baseline, on the held-out week of both public traces.]}
+We evaluate the four sizing methods from Section~\ref{sec:sizing} under
+each schedule. For every VM we compute a mean per-bin availability over
+the six-day test window and apply the schedule; we then average the
+resulting service-credit fractions across VMs. Table~\ref{tab:sla} reports
+the mean net revenue ratio (a value of $1.0$ means the operator keeps every
+dollar of billed revenue; $0.90$ means the SLA schedule reclaims $10\%$).
+
+\begin{table}[t]
+  \centering
+  \small
+  \begin{tabular}{lrrrrrr}
+    \toprule
+    & \multicolumn{3}{c}{fastStorage} & \multicolumn{3}{c}{Rnd} \\
+    \cmidrule(lr){2-4}\cmidrule(lr){5-7}
+    Method              & AWS        & GCP         & Azure       & AWS        & GCP         & Azure \\
+    \midrule
+    lognorm\_ctop       & \SlaFsLNAWSNet{}\% & \SlaFsLNGCPNet{}\% & \SlaFsLNAzureNet{}\% & \SlaRnLNAWSNet{}\% & \SlaRnLNGCPNet{}\% & \SlaRnLNAzureNet{}\% \\
+    empirical\_p998     & \SlaFsEPAWSNet{}\% & \SlaFsEPGCPNet{}\% & \SlaFsEPAzureNet{}\% & \SlaRnEPAWSNet{}\% & \SlaRnEPGCPNet{}\% & \SlaRnEPAzureNet{}\% \\
+    gauss\_meanksd      & \SlaFsGAAWSNet{}\% & \SlaFsGAGCPNet{}\% & \SlaFsGAAzureNet{}\% & \SlaRnGAAWSNet{}\% & \SlaRnGAGCPNet{}\% & \SlaRnGAAzureNet{}\% \\
+    rolling\_max        & \SlaFsRMAWSNet{}\% & \SlaFsRMGCPNet{}\% & \SlaFsRMAzureNet{}\% & \SlaRnRMAWSNet{}\% & \SlaRnRMGCPNet{}\% & \SlaRnRMAzureNet{}\% \\
+    \bottomrule
+  \end{tabular}
+  \caption{Mean net revenue ratio per sizing method under each of three
+           public cloud SLA schedules, on the held-out six-day window.
+           Higher is better. \texttt{lognorm\_ctop} wins under every
+           schedule on both traces, with the largest lead over
+           \texttt{gauss\_meanksd} (up to $6.9$ percentage points on
+           fastStorage under AWS).}
+  \label{tab:sla}
+\end{table}
+
+The log-normal sizing keeps the highest fraction of nominal revenue under
+every schedule on both traces. Under AWS on fastStorage, the operator
+recovers \SlaFsLNAWSNet{}\% of billed revenue with log-normal sizing
+versus \SlaFsGAAWSNet{}\% under the Gaussian assumption; on Rnd the same
+comparison is \SlaRnLNAWSNet{}\% versus \SlaRnGAAWSNet{}\%. The gap is
+mechanical: right-skewed CPU with symmetric-tail sizing under-covers, and
+the SLA schedule prices that under-coverage sharply at the 99\% and 95\%
+tiers.
 
 \section{Discussion}
 

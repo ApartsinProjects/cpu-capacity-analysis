@@ -273,6 +273,31 @@
 
   <p>Pairwise AIC deltas (Table 3) show that log-normal beats each alternative on a majority of bins by a substantial margin. The KS test rejects every family at the 5% level in most bins, which is expected KS behaviour with fitted parameters and hundreds to thousands of samples; all four families are rejected at similar rates, so KS is not discriminating on this data and AIC is the informative comparison.</p>
 
+  <p>To probe tail fit specifically, which is what matters for a sizing method, we also compute the tail-sensitive Anderson-Darling (<i>A</i>²) and Cramér-von Mises (<i>W</i>²) statistics per bin (Table 3b). Log-normal has the smallest median statistic across all three tests on both traces, so the AIC ranking is not an artefact of one likelihood-based measure.</p>
+
+  <figure>
+    <table>
+      <thead>
+        <tr>
+          <th rowspan="2">Family</th>
+          <th class="n" colspan="3">fastStorage (median)</th>
+          <th class="n" colspan="3">Rnd (median)</th>
+        </tr>
+        <tr>
+          <th class="n">KS</th><th class="n"><i>W</i>²</th><th class="n"><i>A</i>²</th>
+          <th class="n">KS</th><th class="n"><i>W</i>²</th><th class="n"><i>A</i>²</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><b>Log-normal</b></td><td class="n"><b>0.24</b></td><td class="n"><b>3.44</b></td><td class="n"><b>20.53</b></td><td class="n"><b>0.24</b></td><td class="n"><b>3.60</b></td><td class="n"><b>20.66</b></td></tr>
+        <tr><td>Gamma</td>            <td class="n">0.25</td>       <td class="n">3.66</td>       <td class="n">21.49</td>       <td class="n">0.25</td>       <td class="n">3.90</td>       <td class="n">21.82</td></tr>
+        <tr><td>Normal</td>           <td class="n">0.28</td>       <td class="n">4.38</td>       <td class="n">24.41</td>       <td class="n">0.27</td>       <td class="n">4.81</td>       <td class="n">25.82</td></tr>
+        <tr><td>Weibull</td>          <td class="n">0.27</td>       <td class="n">4.27</td>       <td class="n">24.26</td>       <td class="n">0.26</td>       <td class="n">4.74</td>       <td class="n">26.86</td></tr>
+      </tbody>
+    </table>
+    <figcaption><b>Table 3b.</b> Median goodness-of-fit statistics per family across hourly bins. Smaller is better. Log-normal wins on median across all three tests on both traces. Per-bin plurality of best-statistic remains with log-normal (47.8% on fastStorage and 53.3% on Rnd for <i>W</i>²).</figcaption>
+  </figure>
+
   <figure>
     <table>
       <thead>
@@ -346,7 +371,32 @@
     <li><b>GCP Compute Engine:</b> 10% credit below 99.99%, 25% below 99.0%, 50% below 95.0% [13].</li>
     <li><b>Azure Virtual Machines:</b> 10% credit below 99.99%, 25% below 99.0%, 100% below 95.0% [14].</li>
   </ul>
-  <div class="status-box"><b>Results pending.</b> The per-provider revenue-delta simulation between the log-normal sizing and each baseline (on the held-out week of both public traces) is in preparation and will be filled in the next revision.</div>
+  <p>We evaluate the four sizing methods from Section 7 under each schedule. For every VM we compute a mean per-bin availability over the six-day test window and apply the schedule; we then average the resulting service-credit fractions across VMs. Table 5 reports the mean net revenue ratio (a value of 100% means the operator keeps every dollar of billed revenue; 90% means the SLA reclaims 10% of it).</p>
+
+  <figure>
+    <table>
+      <thead>
+        <tr>
+          <th rowspan="2">Method</th>
+          <th class="n" colspan="3">fastStorage</th>
+          <th class="n" colspan="3">Rnd</th>
+        </tr>
+        <tr>
+          <th class="n">AWS</th><th class="n">GCP</th><th class="n">Azure</th>
+          <th class="n">AWS</th><th class="n">GCP</th><th class="n">Azure</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code>lognorm_ctop</code></td>   <td class="n"><b>87.05%</b></td><td class="n"><b>89.41%</b></td><td class="n"><b>87.05%</b></td><td class="n"><b>82.19%</b></td><td class="n"><b>86.26%</b></td><td class="n"><b>82.19%</b></td></tr>
+        <tr><td><code>empirical_p998</code></td> <td class="n">80.20%</td>       <td class="n">84.33%</td>       <td class="n">80.20%</td>       <td class="n">78.72%</td>       <td class="n">82.98%</td>       <td class="n">78.72%</td></tr>
+        <tr><td><code>gauss_meanksd</code></td>  <td class="n">81.12%</td>       <td class="n">84.86%</td>       <td class="n">81.12%</td>       <td class="n">75.33%</td>       <td class="n">81.92%</td>       <td class="n">75.33%</td></tr>
+        <tr><td><code>rolling_max</code></td>    <td class="n">82.42%</td>       <td class="n">86.16%</td>       <td class="n">82.42%</td>       <td class="n">80.78%</td>       <td class="n">84.65%</td>       <td class="n">80.78%</td></tr>
+      </tbody>
+    </table>
+    <figcaption><b>Table 5.</b> Mean net revenue ratio per sizing method under each of three public cloud SLA schedules, on the held-out six-day window. Higher is better. <code>lognorm_ctop</code> wins under every schedule on both traces, with the largest lead of 6.9 percentage points over <code>gauss_meanksd</code> on Rnd under AWS.</figcaption>
+  </figure>
+
+  <p>The log-normal sizing keeps the highest fraction of nominal revenue under every schedule on both traces. Under AWS on fastStorage, the operator recovers 87.05% of billed revenue with log-normal sizing versus 81.12% under the Gaussian assumption; on Rnd the same comparison is 82.19% versus 75.33%. The gap is mechanical: right-skewed CPU with symmetric-tail sizing under-covers, and the SLA schedule prices that under-coverage sharply at the 99% and 95% tiers.</p>
 
   <h2 class="sec"><span class="num">9</span>Discussion</h2>
   <p><b>Where the log-normal breaks.</b> On both public traces there is a residual roughly 8% of bins where a normal fit wins by AIC. Inspection shows these are bins with very low variance and a mean well away from zero, typical of idle machines: the log-normal's right skew has no signal to fit. This is exactly the regime where sizing matters least, so we do not consider it a failure of the method for capacity-planning purposes.</p>

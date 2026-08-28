@@ -1,0 +1,118 @@
+{
+  "fastStorage": {
+    "lognorm_ctop": {
+      "n_vms": 254,
+      "mean_availability": 0.9874172979654923,
+      "median_availability": 0.9988234612583585,
+      "share_ge_9999": 0.43700787401574803,
+      "share_ge_99": 0.7480314960629921,
+      "share_ge_95": 0.952755905511811,
+      "mean_credit_AWS": 0.1295275590551181,
+      "mean_net_revenue_ratio_AWS": 0.8704724409448819,
+      "mean_credit_GCP": 0.10590551181102362,
+      "mean_net_revenue_ratio_GCP": 0.8940944881889764,
+      "mean_credit_Azure": 0.1295275590551181,
+      "mean_net_revenue_ratio_Azure": 0.8704724409448819
+    },
+    "empirical_p998": {
+      "n_vms": 254,
+      "mean_availability": 0.9776013938345545,
+      "median_availability": 0.9949920923649394,
+      "share_ge_9999": 0.14173228346456693,
+      "share_ge_99": 0.6653543307086615,
+      "share_ge_95": 0.9173228346456693,
+      "mean_credit_AWS": 0.19803149606299214,
+      "mean_net_revenue_ratio_AWS": 0.8019685039370079,
+      "mean_credit_GCP": 0.15669291338582678,
+      "mean_net_revenue_ratio_GCP": 0.8433070866141732,
+      "mean_credit_Azure": 0.19803149606299214,
+      "mean_net_revenue_ratio_Azure": 0.8019685039370079
+    },
+    "gauss_meanksd": {
+      "n_vms": 254,
+      "mean_availability": 0.977395591862686,
+      "median_availability": 0.9949748664409775,
+      "share_ge_9999": 0.25196850393700787,
+      "share_ge_99": 0.6141732283464567,
+      "share_ge_95": 0.9251968503937008,
+      "mean_credit_AWS": 0.18877952755905514,
+      "mean_net_revenue_ratio_AWS": 0.8112204724409449,
+      "mean_credit_GCP": 0.15137795275590551,
+      "mean_net_revenue_ratio_GCP": 0.8486220472440945,
+      "mean_credit_Azure": 0.18877952755905514,
+      "mean_net_revenue_ratio_Azure": 0.8112204724409449
+    },
+    "rolling_max": {
+      "n_vms": 254,
+      "mean_availability": 0.9801137989374632,
+      "median_availability": 0.9968463827383462,
+      "share_ge_9999": 0.19291338582677164,
+      "share_ge_99": 0.7401574803149606,
+      "share_ge_95": 0.9251968503937008,
+      "mean_credit_AWS": 0.17578740157480316,
+      "mean_net_revenue_ratio_AWS": 0.8242125984251969,
+      "mean_credit_GCP": 0.13838582677165356,
+      "mean_net_revenue_ratio_GCP": 0.8616141732283464,
+      "mean_credit_Azure": 0.17578740157480316,
+      "mean_net_revenue_ratio_Azure": 0.8242125984251969
+    }
+  },
+  "rnd": {
+    "lognorm_ctop": {
+      "n_vms": 258,
+      "mean_availability": 0.9798311257697904,
+      "median_availability": 0.9964747356051704,
+      "share_ge_9999": 0.29457364341085274,
+      "share_ge_99": 0.689922480620155,
+      "share_ge_95": 0.9186046511627907,
+      "mean_credit_AWS": 0.17810077519379847,
+      "mean_net_revenue_ratio_AWS": 0.8218992248062016,
+      "mean_credit_GCP": 0.1374031007751938,
+      "mean_net_revenue_ratio_GCP": 0.8625968992248062,
+      "mean_credit_Azure": 0.17810077519379847,
+      "mean_net_revenue_ratio_Azure": 0.8218992248062016
+    },
+    "empirical_p998": {
+      "n_vms": 258,
+      "mean_availability": 0.9767591741827508,
+      "median_availability": 0.9927797796294906,
+      "share_ge_9999": 0.09302325581395349,
+      "share_ge_99": 0.6124031007751938,
+      "share_ge_95": 0.9147286821705426,
+      "mean_credit_AWS": 0.2127906976744186,
+      "mean_net_revenue_ratio_AWS": 0.7872093023255814,
+      "mean_credit_GCP": 0.17015503875968996,
+      "mean_net_revenue_ratio_GCP": 0.82984496124031,
+      "mean_credit_Azure": 0.2127906976744186,
+      "mean_net_revenue_ratio_Azure": 0.7872093023255814
+    },
+    "gauss_meanksd": {
+      "n_vms": 258,
+      "mean_availability": 0.9710033564469878,
+      "median_availability": 0.9917646944840062,
+      "share_ge_9999": 0.18992248062015504,
+      "share_ge_99": 0.5542635658914729,
+      "share_ge_95": 0.8682170542635659,
+      "mean_credit_AWS": 0.24670542635658918,
+      "mean_net_revenue_ratio_AWS": 0.7532945736434108,
+      "mean_credit_GCP": 0.18081395348837212,
+      "mean_net_revenue_ratio_GCP": 0.8191860465116279,
+      "mean_credit_Azure": 0.24670542635658918,
+      "mean_net_revenue_ratio_Azure": 0.7532945736434108
+    },
+    "rolling_max": {
+      "n_vms": 258,
+      "mean_availability": 0.980985736881656,
+      "median_availability": 0.9953873802978662,
+      "share_ge_9999": 0.1124031007751938,
+      "share_ge_99": 0.6976744186046512,
+      "share_ge_95": 0.9224806201550387,
+      "mean_credit_AWS": 0.1922480620155039,
+      "mean_net_revenue_ratio_AWS": 0.8077519379844961,
+      "mean_credit_GCP": 0.1534883720930233,
+      "mean_net_revenue_ratio_GCP": 0.8465116279069766,
+      "mean_credit_Azure": 0.1922480620155039,
+      "mean_net_revenue_ratio_Azure": 0.8077519379844961
+    }
+  }
+}

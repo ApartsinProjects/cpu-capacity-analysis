@@ -99,13 +99,39 @@ already present, while gamma follows from additive Poisson arrivals with
 fixed per-request cost. A follow-up paper would test the multiplicative
 mechanism directly using arrival-rate-paired CPU data.
 
+## Follow-up experiments
+
+Three additional experiments drop into the same folder and feed the paper:
+
+- **`scaling_fit.py`** — per-VM OLS fit of the parameter-scaling law
+  μ(λ) = αλ+β, σ(λ) = γ/√λ+δ using network throughput as a load proxy.
+  Honest negative result on Bitbrains: median R² 0.23 / 0.24 for μ, γ̂
+  slightly negative rather than positive as the derivation predicts. See
+  paper Section 6.
+- **`sizing_eval.py`** — held-out sizing accuracy comparison. Splits each
+  trace into a 24-day train and 6-day test window, fits four sizing methods
+  (log-normal ceiling, empirical 99.8th percentile, Gaussian mean+3σ,
+  rolling maximum) per (VM, hour) bin, and reports coverage and predicted
+  ceiling on the test window. `lognorm_ctop` hits the 99.8% target in 83%
+  of fastStorage bins vs. 76% for the Gaussian baseline. See paper Section 7.
+- **`ad_cvm.py`** — Anderson-Darling and Cramér-von Mises goodness-of-fit
+  tests, more tail-sensitive than KS. Log-normal has the smallest median
+  statistic on every test on both traces. See paper Section 5.
+- **`sla_sim.py`** — SLA-aware revenue simulation. Applies public AWS EC2,
+  GCP Compute Engine, and Azure VMs SLA schedules to per-VM availability
+  under each sizing method. Log-normal wins under every schedule on both
+  traces (up to 6.9-percentage-point lead over the Gaussian assumption).
+  See paper Section 8.
+
 ## Files
 
-- `fit.py`, `fit_rnd.py`: analysis scripts for the two traces.
-- `build_paper_macros.py`: combines both result sets and writes
-  `../paper/paper_macros.tex` and a combined chart.
-- `bitbrains_fit_results.csv`, `rnd_fit_results.csv`: per-bin results
-  (VM, hour, sample count, mean, std, per-family AIC and KS p-value,
-  best-by-AIC label).
-- `bitbrains_summary.json`, `rnd_summary.json`: per-trace aggregate summaries.
-- `best_fit_share.png`: combined bar chart of best-fit shares.
+- `fit.py`, `fit_rnd.py`: log-normal-vs-alternatives per-bin AIC/KS fits.
+- `scaling_fit.py`, `sizing_eval.py`, `ad_cvm.py`, `sla_sim.py`: the four
+  follow-up experiments listed above.
+- `build_paper_macros.py`, `build_extra_macros.py`, `build_final_macros.py`:
+  aggregate each set of results into LaTeX numeric macros for the paper.
+- `*_fit_results.csv`, `sizing_*.csv`, `scaling_*.csv`, `ad_cvm_*.csv`,
+  `sla_*.csv`: per-bin or per-VM results tables.
+- `*_summary.json`: aggregate summaries used by the macro builders.
+- `best_fit_share.png`: combined bar chart of best-fit shares (Figure 1
+  of the paper).
