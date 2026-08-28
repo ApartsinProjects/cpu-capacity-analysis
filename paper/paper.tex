@@ -87,22 +87,17 @@ bill. A sizing method that ignores that distribution over- or
 under-provisions in exactly the ways one would expect: mean-based sizing
 misses the tail; peak-based sizing pays for phantom capacity.
 
-An industry study conducted in 2011 on a production billing platform
-addressed this by modelling CPU utilization $C$ at fixed transaction load $N$
+A 2011 technical report on a production transaction-processing platform
+addressed this by modelling CPU utilization $C$ at a fixed transaction load $N$
 as log-normal, derived from a simple mechanism: each incoming transaction
 adds CPU load in proportion to the load already present, so
 $\Delta C / \Delta n \propto \alpha C$ integrates to
 $\log C = \alpha n + \beta$~\cite{apartsin2011cat}. Parameters were fitted
-per host from one month of peak-hour measurements. The method drove hardware
-sizing decisions on two large service-provider deployments; the operator
-reported hardware savings on the order of \$10\,M on the first engagement.
-
-Two things have kept that study out of the peer-reviewed literature. First,
-the underlying data were proprietary, so the log-normal claim was tested
-only inside one organisation. Second, the method was compared to a linear
-extrapolation baseline internal to the sizing team, not to standard
-practitioner alternatives or to modern ML forecasters. This paper closes
-both gaps.
+per host from one month of peak-hour measurements. The report was based on
+a proprietary dataset and compared the resulting sizing method to a linear
+extrapolation baseline internal to the operator's team, not to standard
+practitioner alternatives or to data-driven forecasters. This paper puts
+the model on public data and against standard baselines.
 
 \subsection*{Contributions}
 
@@ -227,7 +222,7 @@ the independent replication.
     \toprule
     Trace & Servers/VMs & Duration & Resolution & Access \\
     \midrule
-    Amdocs 2011 (this study's origin) & 26      & 30 days & 5 s   & proprietary \\
+    Origin (2011 industrial trace)    & 26      & 30 days & 5 s   & proprietary \\
     Bitbrains GWA-T-12 fastStorage    & 1\,250 & 30 days & 5 min & public~\cite{shen2015bitbrains} \\
     Bitbrains GWA-T-12 Rnd            & \RndVms{}    & 30 days & 5 min & public~\cite{shen2015bitbrains} \\
     \bottomrule
@@ -571,9 +566,7 @@ on Zenodo with a DOI.
 
 The traces used in Section~\ref{sec:validation} were graciously provided by
 Bitbrains IT Services Inc.\ and released through the Grid Workloads Archive
-at TU Delft. The 2011 industrial study on which this paper builds was
-conducted at Amdocs; we thank the operations team there for the deployment
-work that made the original method's outcomes measurable.
+at TU Delft.
 
 \bibliographystyle{plainnat}
 \bibliography{paper}

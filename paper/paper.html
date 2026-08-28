@@ -194,8 +194,7 @@
 
   <h2 class="sec"><span class="num">1</span>Introduction</h2>
   <p>Capacity planning for a transaction-processing service asks a single question: how much hardware do we need so that we honour our service-level objectives with high probability, without paying for headroom we never use? The question is easy to state and hard to answer, because CPU utilization at any moment is not a fixed function of offered load: it is a distribution whose tail governs the SLA and whose mean governs the bill. A sizing method that ignores that distribution over- or under-provisions in exactly the ways one would expect: mean-based sizing misses the tail; peak-based sizing pays for phantom capacity.</p>
-  <p>An industry study conducted in 2011 on a production billing platform addressed this by modelling CPU utilization <i class="v">C</i> at a fixed transaction load <i class="v">N</i> as log-normal, derived from a simple mechanism: each incoming transaction adds CPU load in proportion to the load already present, so Δ<i class="v">C</i>/Δ<i class="v">n</i> ∝ α<i class="v">C</i> integrates to log <i class="v">C</i> = α<i class="v">n</i> + β [1]. Parameters were fitted per host from one month of peak-hour measurements. The method drove hardware sizing decisions on two large service-provider deployments; the operator reported hardware savings on the order of $10 M on the first engagement.</p>
-  <p>Two things have kept that study out of the peer-reviewed literature. First, the underlying data were proprietary, so the log-normal claim was tested only inside one organisation. Second, the method was compared to a linear extrapolation baseline internal to the sizing team, not to standard practitioner alternatives or to modern forecasters. This paper closes both gaps.</p>
+  <p>A 2011 technical report on a production transaction-processing platform addressed this by modelling CPU utilization <i class="v">C</i> at a fixed transaction load <i class="v">N</i> as log-normal, derived from a simple mechanism: each incoming transaction adds CPU load in proportion to the load already present, so Δ<i class="v">C</i>/Δ<i class="v">n</i> ∝ α<i class="v">C</i> integrates to log <i class="v">C</i> = α<i class="v">n</i> + β [1]. Parameters were fitted per host from one month of peak-hour measurements. The report was based on a proprietary dataset and compared the resulting sizing method to a linear extrapolation baseline internal to the operator's team, not to standard practitioner alternatives or to data-driven forecasters. This paper puts the model on public data and against standard baselines.</p>
 
   <h3>Contributions</h3>
   <ul>
@@ -237,7 +236,7 @@
       <tr><th>Trace</th><th class="n">Servers/VMs</th><th class="n">Duration</th><th class="n">Resolution</th><th>Access</th></tr>
     </thead>
     <tbody>
-      <tr><td>Amdocs 2011 (origin)</td><td class="n">26</td><td class="n">30 days</td><td class="n">5 s</td><td>proprietary</td></tr>
+      <tr><td>Origin (2011 industrial trace)</td><td class="n">26</td><td class="n">30 days</td><td class="n">5 s</td><td>proprietary</td></tr>
       <tr><td>Bitbrains fastStorage</td><td class="n">1,250</td><td class="n">30 days</td><td class="n">5 min</td><td>public [10]</td></tr>
       <tr><td>Bitbrains Rnd</td><td class="n">~500</td><td class="n">30 days</td><td class="n">5 min</td><td>public [10]</td></tr>
     </tbody>
@@ -421,12 +420,12 @@
   <p>The complete pipeline, including the two public-trace downloads, the fit script, the scoring, and the tables in this paper, runs in a few minutes on a laptop. Code and data manifests are on GitHub at <a href="https://github.com/ApartsinProjects/cpu-capacity-analysis">github.com/ApartsinProjects/cpu-capacity-analysis</a> (scoping run in <code>scoping/</code>, paper build in <code>paper/</code>).</p>
 
   <h2 class="sec">Acknowledgements</h2>
-  <p>The traces used in Section 5 were graciously provided by Bitbrains IT Services Inc. and released through the Grid Workloads Archive at TU Delft. The 2011 industrial study on which this paper builds was conducted at Amdocs; we thank the operations team there for the deployment work that made the original method's outcomes measurable.</p>
+  <p>The traces used in Section 5 were graciously provided by Bitbrains IT Services Inc. and released through the Grid Workloads Archive at TU Delft.</p>
 
   <h2 class="sec">References</h2>
   <div class="refs">
     <ol>
-      <li>A. Apartsin. From CPU Load to Revenue: A Probabilistic Capacity Model. Technical report, Amdocs, 2011. Updated August 2026. <a href="https://apartsinprojects.github.io/cpu-capacity-analysis/">apartsinprojects.github.io/cpu-capacity-analysis</a>.</li>
+      <li>A. Apartsin. From CPU Load to Revenue: A Probabilistic Capacity Model. Technical report, 2011. Updated August 2026. <a href="https://apartsinprojects.github.io/cpu-capacity-analysis/">apartsinprojects.github.io/cpu-capacity-analysis</a>.</li>
       <li>E. Cortez, A. Bonde, A. Muzio, M. Russinovich, M. Fontoura, and R. Bianchini. Resource Central: Understanding and predicting workloads for improved resource management in large cloud platforms. In <i>SOSP</i>, 2017.</li>
       <li>C. Reiss, A. Tumanov, G. R. Ganger, R. H. Katz, and M. A. Kozuch. Heterogeneity and dynamicity of clouds at scale: Google trace analysis. In <i>SoCC</i>, 2012.</li>
       <li>A. B. Downey. The structural cause of file size distributions. <i>ACM SIGMETRICS Performance Evaluation Review</i>, 29(1):328-329, 2001.</li>
