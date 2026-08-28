@@ -196,7 +196,7 @@
 
   <div class="abstract">
     <h2>Abstract</h2>
-    <p>Sizing hardware capacity for a complex, multi-tier transaction-processing system is a costly trade-off: over-provisioning wastes infrastructure budget, while under-provisioning drops billing transactions and exposes the operator to contractual fines for missed service levels. Sound sizing therefore requires weighing hardware cost estimates against the expected penalty cost of overload, which in turn requires knowing the probability of overload at a given load. This report presents a probabilistic method for that question: given a transaction rate, what is the probability that CPU utilization stays below the level required to meet service-level objectives? Transaction arrivals were modeled as a Poisson process, and CPU utilization conditional on load with a log-normal distribution derived from a multiplicative-overhead argument. Model parameters were learned from one month of peak-hour production measurements. The fitted model reproduced the observed utilization data and yields, for any utilization budget <i class="v">B</i> and candidate transaction rate <i class="v">N</i><sub>0</sub>, an estimate of <i class="v">P</i>(<i class="v">C</i> &lt; <i class="v">B</i> | <i class="v">N</i> = <i class="v">N</i><sub>0</sub>). A controlled load experiment at 70%, 100%, and 120% of nominal load supported the modeling choices and revealed a non-CPU bottleneck at extreme load; a wider validation on 26 production servers over 30 days confirmed the log-normal fit inside every hour-of-day bin, and exposed that expected CPU grows exponentially, not linearly, with offered load. The capacity distribution is then composed with an event-arrival histogram and an empirical service-success curve into a decision-support model that returns expected availability and expected revenue under a tiered SLA contract. Applied on two large production deployments, the method supported hardware sizing decisions that avoided provisioning costs on the order of $10 M on the first engagement, and gave a quantitative comparison basis on the second. The method is delivered as an interactive spreadsheet tool for operations teams.</p>
+    <p>Sizing hardware for a multi-tier transaction-processing system is a costly trade-off: over-provisioning wastes infrastructure budget, while under-provisioning drops billing transactions and exposes the operator to contractual fines for missed service levels. Weighing hardware cost against expected penalty cost requires one quantity, stated precisely: given a transaction rate, what is the probability that CPU utilization stays below the level at which service-level objectives are met? This report answers that question with a probabilistic model. We model transaction arrivals as a Poisson process and CPU utilization at a given load as log-normal, a form derived from a multiplicative-overhead argument. We fit the parameters on one month of peak-hour measurements from a single production host; the fitted model reproduces the observed utilization and yields, for any utilization budget <i class="v">B</i> and candidate transaction rate <i class="v">N</i><sub>0</sub>, an estimate of <i class="v">P</i>(<i class="v">C</i> &lt; <i class="v">B</i> | <i class="v">N</i> = <i class="v">N</i><sub>0</sub>). A controlled load experiment at 70%, 100%, and 120% of nominal load supported the log-normal choice and revealed a non-CPU bottleneck at extreme load; a wider validation on 26 production servers over 30 days confirmed the fit inside every hour-of-day bin and exposed that expected CPU grows exponentially, not linearly, with offered load. Composing the capacity distribution with an event-arrival histogram and an empirical service-success curve extends it into a decision-support model that returns expected availability and expected revenue under a tiered SLA contract. Applied on two large production deployments, the method supported hardware sizing decisions with a reported saving on the order of $10 M on the first engagement and gave a quantitative comparison basis on the second. It is delivered as an interactive spreadsheet for operations teams.</p>
   </div>
 
   <h2 class="sec"><span class="num">1</span>Problem statement</h2>
@@ -207,26 +207,26 @@
   <h2 class="sec"><span class="num">2</span>Load model</h2>
   <p>The hourly rate <i class="v">N</i> is converted to the 5-second measurement scale as <i class="v">N</i><sub>5</sub> = <i class="v">N</i> / (60 · 12). The number of transactions <i class="v">n</i> arriving in a given 5-second interval is a random variable, modeled as Poisson:</p>
   <p class="eq"><i class="v">n</i> ~ Poisson(<i class="v">N</i><sub>5</sub>) &nbsp;≈&nbsp; Normal(μ = <i class="v">N</i><sub>5</sub>,&nbsp; σ² = <i class="v">N</i><sub>5</sub>)</p>
-  <p>with the normal approximation applying at the arrival counts of interest. Supporting analysis of the production traces shows a near-uniform distribution of transaction volume across days, across weekdays, and of peak-hour transaction counts from day to day, which is consistent with treating the peak-hour arrival process as homogeneous.</p>
+  <p>with the normal approximation applying at the arrival counts of interest. Production traces support this choice: transaction volume is spread near-uniformly across days and across weekdays, and peak-hour counts are stable from day to day, so the peak-hour arrival process can be treated as homogeneous.</p>
 
   <h2 class="sec"><span class="num">3</span>CPU utilization model</h2>
   <p>Suppose the number of concurrent transactions increases by Δ<i class="v">n</i>, raising CPU load by Δ<i class="v">C</i>. The increment is larger when the system is already busy, because context-switch overhead grows with utilization. The simplest model with this property makes the increment proportional to the current level:</p>
   <p class="eq">Δ<i class="v">C</i> / Δ<i class="v">n</i> ∝ α<i class="v">C</i></p>
   <p>Rearranging gives Δ<i class="v">C</i> / <i class="v">C</i> ∝ α Δ<i class="v">n</i>, and integrating yields:</p>
   <p class="eq">log <i class="v">C</i> = α<i class="v">n</i> + β</p>
-  <p>Since <i class="v">n</i> is approximately normal (Section 2), log <i class="v">C</i> is normal, and <i class="v">C</i> follows a standard log-normal distribution. The two parameters α and β are learned from data.</p>
+  <p>Since <i class="v">n</i> is approximately normal (Section 2), log <i class="v">C</i> is normal, and <i class="v">C</i> follows a log-normal distribution. The two parameters α and β are learned from data.</p>
 
   <h2 class="sec"><span class="num">4</span>Parameter estimation</h2>
-  <p>Parameters were fitted on one month of production measurements from a single host:</p>
+  <p>We fit the parameters on one month of production measurements from a single host:</p>
   <ul>
-    <li>CPU utilization samples collected during the daily peak hour over 30 days (roughly 310 five-second observations);</li>
+    <li>CPU utilization samples collected during the daily peak hour over 30 days (about 310 five-second observations);</li>
     <li>daily peak-hour transaction counts over the same 30 days (30 observations).</li>
   </ul>
-  <p>The combined set of about 340 points determines the log-normal parameters by regression of log <i class="v">C</i> on <i class="v">n</i>. The fitted distribution reproduces the observed utilization data well.</p>
+  <p>The combined set of about 340 points determines the log-normal parameters by regression of log <i class="v">C</i> on <i class="v">n</i>. The fitted distribution reproduces the observed utilization data well. A good fit on one host is not yet a test of the modeling choice, so the next two sections test it: first under controlled load, then at production scale.</p>
 
   <h2 class="sec"><span class="num">5</span>Controlled load experiment</h2>
   <h3><span class="num">5.1</span>Setup</h3>
-  <p>A load experiment on a test environment ran four configurations: 70% of nominal load for 1 hour, 70% for 17 hours (with one missed hour), 100% for 4 hours, and 120% for 1 hour. CPU utilization was recorded on the database tier every 5 minutes (as averages, per the monitoring configuration) and on the application tier as hourly average, minimum, and maximum.</p>
+  <p>A load experiment on a test environment ran four configurations: 70% of nominal load for 1 hour, 70% for 17 hours (with one missed hour), 100% for 4 hours, and 120% for 1 hour. We recorded CPU utilization on the database tier every 5 minutes (as averages, per the monitoring configuration) and on the application tier as hourly average, minimum, and maximum.</p>
 
   <h3><span class="num">5.2</span>Observed utilization</h3>
   <figure>
@@ -356,11 +356,11 @@
         </svg>
       </div>
     </div>
-    <figcaption><b>Figure 2.</b> Application-tier mean CPU (solid) with ±3σ envelopes (dashed) under the two candidate models, fitted on the 70% and 100% load configurations and drawn on a common 0 to 100% scale. Model A's normal assumption produces a wide envelope, roughly 22% to 91% at 70% load; Model B's log-normal envelope is far tighter and narrows toward 100% load. The narrower variance estimate at 100% load partly reflects the shorter measurement window (4 hours at 100% versus 17 hours at 70%).</figcaption>
+    <figcaption><b>Figure 2.</b> Application-tier mean CPU (solid) with ±3σ envelopes (dashed) under the two candidate models, fitted on the 70% and 100% load configurations and drawn on a common 0 to 100% scale. Model A's normal assumption produces a wide envelope, about 22% to 91% at 70% load; Model B's log-normal envelope is far tighter and narrows toward 100% load. The narrower variance estimate at 100% load partly reflects the shorter measurement window (4 hours at 100% versus 17 hours at 70%).</figcaption>
   </figure>
 
   <h2 class="sec"><span class="num">6</span>Production validation at scale</h2>
-  <p>The controlled experiment supports the modeling choice on a small number of load levels; a wider validation was carried out on a production billing platform. Data were collected from 26 rating and balancing servers over 30 days, spanning four event classes (voice, short messaging, data, and replenishment). For every hour-of-day bin, per-server, we retained 30 hourly event totals (one per day) and 21,600 five-second CPU samples (720 per day for 30 days). In every bin the empirical distribution of log(CPU) is close to normal, so <i class="v">C</i> follows a log-normal distribution as in Section 3.</p>
+  <p>The controlled experiment tests the model at only a few load levels, so we validated it more widely on a production billing platform. We collected data from 26 rating and balancing servers over 30 days, spanning four event classes (voice, short messaging, data, and replenishment). For every hour-of-day bin, per server, we retained 30 hourly event totals (one per day) and 21,600 five-second CPU samples (720 per day for 30 days). In every bin the empirical distribution of log(CPU) is close to normal, so <i class="v">C</i> follows a log-normal distribution as in Section 3.</p>
   <p>Under this fit, an operational capacity ceiling is defined as</p>
   <p class="eq"><i class="v">C</i><sub>top</sub> = exp{ &nbsp;&mu;<sub>log C</sub> + 3&nbsp;&sigma;<sub>log C</sub>&nbsp; }</p>
   <p>with the mean and standard deviation of log <i class="v">C</i> computed inside the bin. By the three-sigma rule this ceiling covers <i class="v">C</i> with 99.8% probability. The exceedance function <i class="v">P</i>(<i class="v">C</i> &gt; <i class="v">c</i>) then follows directly:</p>
@@ -429,7 +429,7 @@
   </figure>
 
   <h2 class="sec"><span class="num">7</span>How the model parameters scale with load</h2>
-  <p>Fitting the log-normal per hour-of-day bin on one heavily-loaded server exposes how μ<sub>log C</sub> and σ<sub>log C</sub> depend on offered load, expressed as the Poisson intensity λ of transactions per 5-second interval (equivalently, average events per second per core):</p>
+  <p>The per-bin fits also show how the model parameters move with load. On one heavily-loaded server, fitting the log-normal per hour-of-day bin exposes how μ<sub>log C</sub> and σ<sub>log C</sub> depend on offered load, expressed as the Poisson intensity λ of transactions per 5-second interval (equivalently, average events per second per core):</p>
   <figure>
     <svg viewBox="0 0 640 280" role="img" aria-label="Two panels: mean of log CPU rises with load, standard deviation of log CPU falls with load, across roughly seven to twenty-eight events per five-second interval.">
       <g transform="translate(0,0)">
@@ -481,7 +481,7 @@
         </g>
       </g>
     </svg>
-    <figcaption><b>Figure 4.</b> Fitted log-normal parameters versus offered load, one point per hour-of-day bin for a representative server. Mean log CPU rises from about 2.45 at λ = 7 to about 3.73 at λ = 28, which corresponds to average CPU utilization growing from roughly 12% to 42%; the standard deviation of log CPU falls from about 0.37 to 0.14. The mean-in-log-CPU rising roughly linearly with λ is consistent with an exponential (not linear) growth of expected CPU with offered load, which matters for long-horizon capacity forecasts.</figcaption>
+    <figcaption><b>Figure 4.</b> Fitted log-normal parameters versus offered load, one point per hour-of-day bin for a representative server. Mean log CPU rises from about 2.45 at λ = 7 to about 3.73 at λ = 28, which corresponds to average CPU utilization growing from about 12% to 42%; the standard deviation of log CPU falls from about 0.37 to 0.14. The near-linear rise of mean log CPU with λ is consistent with exponential (not linear) growth of expected CPU with offered load, which matters for long-horizon capacity forecasts.</figcaption>
   </figure>
 
   <h2 class="sec"><span class="num">8</span>From capacity to economics: decision-support model</h2>
@@ -491,10 +491,10 @@
     <li><i class="v">P<sub>c</sub></i>(<i class="v">C</i> = <i class="v">c</i> | <i class="v">E</i> = <i class="v">e</i>): probability of CPU utilization <i class="v">c</i> given <i class="v">e</i> events (the log-normal capacity model of Sections 3 and 6).</li>
     <li><i class="v">P<sub>s</sub></i>(<i class="v">C</i> = <i class="v">c</i>): probability that an event arriving while CPU is at <i class="v">c</i> is processed within the SLA (a service-success curve).</li>
   </ul>
-  <p>Summed over the joint distribution, these give the expected number of successful and failed events per server, and thence an expected availability ratio and an expected revenue:</p>
+  <p>Summed over the joint distribution, these give the expected number of successful and failed events per server, and from those an expected availability ratio and an expected revenue:</p>
   <p class="eq"><i class="v">S</i> = Σ<sub><i class="v">c,e,t</i></sub> <i class="v">P<sub>s</sub></i>(<i class="v">C</i>=<i class="v">c</i>)&nbsp;<i class="v">P<sub>e</sub></i>(<i class="v">E</i>=<i class="v">e</i>|<i class="v">T</i>=<i class="v">t</i>)&nbsp;<i class="v">P<sub>c</sub></i>(<i class="v">C</i>=<i class="v">c</i>|<i class="v">E</i>=<i class="v">e</i>)</p>
   <p class="eq"><i class="v">A</i> = <i class="v">S</i> / (<i class="v">S</i> + <i class="v">F</i>) &nbsp;·&nbsp; <i class="v">R</i> = RevenueShare(<i class="v">A</i>) · ARPE · <i class="v">S</i> − Fine(<i class="v">A</i>)</p>
-  <p>where ARPE is the operator's average revenue per event and the piecewise functions RevenueShare(·) and Fine(·) encode the contract's tiered SLA schedule. Overload feeds back into revenue through <i class="v">P<sub>s</sub></i>, which is encoded as a sharp threshold anchored to three CPU levels labelled by domain experts (essentially always succeeds below 90%, half of events fail at 92%, almost all fail above 95%), with intermediate values interpolated:</p>
+  <p>where ARPE is the operator's average revenue per event and the piecewise functions RevenueShare(·) and Fine(·) encode the contract's tiered SLA schedule. Overload feeds back into revenue through <i class="v">P<sub>s</sub></i>, a sharp threshold anchored at three CPU levels labelled by domain experts: below 90% CPU an event essentially always succeeds, at 92% half of events fail, and above 95% almost all fail. Intermediate values are interpolated:</p>
   <figure>
     <svg viewBox="0 0 640 260" role="img" aria-label="Step-like curve of single-event failure probability rising from about zero at 90 percent CPU to one at 100 percent CPU, with a steep rise between 90 and 92 percent.">
       <g stroke="var(--grid)" stroke-width="1">
@@ -544,7 +544,7 @@
   </figure>
 
   <h2 class="sec"><span class="num">9</span>Worked example: annual sizing under contract</h2>
-  <p>To illustrate, we apply the decision-support model to a 20-server fleet handling roughly 386 billion events per year, on a contract paying $2 × 10<sup>−4</sup> per event, with a $1 M fine when availability falls below 99% and a two-tier revenue share above it:</p>
+  <p>To illustrate, we apply the decision-support model to a 20-server fleet handling about 386 billion events per year. The contract pays $2 × 10<sup>−4</sup> per event, imposes a $1 M fine when availability falls below 99%, and grants a two-tier revenue share above it:</p>
   <table>
     <thead>
       <tr><th>Availability tier</th><th class="n">Revenue share</th><th class="n">Fine</th></tr>
@@ -555,13 +555,13 @@
       <tr><td>100% (fully met)</td><td class="n">4%</td><td class="n">none</td></tr>
     </tbody>
   </table>
-  <p>The event histogram varies from about 0.2 M events per hour off-peak to 4.7 M at the peak hour (19:00). Summing hour-by-hour, the model predicts an expected 366 successful billing dollars per server per day, or approximately $132 K per server-year and $2.64 M in expected revenue from the fleet, with residual failure probability concentrated in the peak evening hours (18:00 to 20:00) where the CPU distribution brushes 90%.</p>
+  <p>The event histogram varies from about 0.2 M events per hour off-peak to 4.7 M at the peak hour (19:00). Summing hour by hour, the model predicts an expected 366 successful billing dollars per server per day, which is about $132 K per server-year and $2.64 M in expected revenue from the fleet. Residual failure probability concentrates in the peak evening hours (18:00 to 20:00), where the CPU distribution brushes 90%.</p>
   <p>A quarterly variant of the same model was used to plan hardware growth on a mixed fleet of two server generations. Given about 5% quarterly growth in event volume and 3% growth in operator revenues, the model projects the peak-hour CPU of the older server generation rising from 57% at baseline, peaking near 61% mid-year, and settling near 60% by year-end as new units come online. Under the same SLA contract, availability stays at or above 99.9% only if the fleet of the older generation grows from 15 to 18 units over four quarters. The purchase schedule is set by the first quarter in which the predicted CPU crosses the sizing threshold, rather than by a fixed headroom heuristic.</p>
 
   <h2 class="sec"><span class="num">10</span>Deployment outcomes</h2>
-  <p>The method was applied on two large service-provider deployments. On the first, it drove the hardware sizing analysis for a managed-services engagement and, by replacing a linear extrapolation with the log-normal-based ceiling, supported a reported saving on the order of $10 M in provisioned hardware over the planning horizon. On the second, it was used internally to compare pre-production soak-test results on a new site with measurements from an existing production site, giving a quantitative basis for accepting or rejecting the new site's capacity claims.</p>
+  <p>The method was applied on two large service-provider deployments. On the first, it drove the hardware sizing analysis for a managed-services engagement: replacing a linear extrapolation with the log-normal-based ceiling supported a reported saving on the order of $10 M in provisioned hardware over the planning horizon. On the second, it compared pre-production soak-test results on a new site with measurements from an existing production site, giving a quantitative basis for accepting or rejecting the new site's capacity claims.</p>
   <p>The method is delivered as an interactive spreadsheet: an operator enters a target transaction rate and a CPU budget, and the tool returns the probability of exceeding that budget and the corresponding expected-revenue impact under the contract's SLA tiers.</p>
 
   <h2 class="sec"><span class="num">11</span>Scope</h2>
-  <p>Parameters α and β are re-learned for each host and workload from about a month of peak-hour measurements; μ<sub>log C</sub> and σ<sub>log C</sub> are re-estimated per hour-of-day bin where finer resolution matters. The capacity model describes the regime where CPU is the binding resource; the controlled experiment places the boundary of that regime between 100% and 120% of nominal load for the system studied, beyond which capacity is governed by network or disk I/O and a different model applies. The decision-support model in Sections 8 and 9 assumes an SLA contract whose revenue-share and fine schedule can be expressed as a piecewise function of availability; other contract structures can be handled by substituting RevenueShare(·) and Fine(·) accordingly.</p>
+  <p>Parameters α and β are re-learned for each host and workload from about a month of peak-hour measurements; μ<sub>log C</sub> and σ<sub>log C</sub> are re-estimated per hour-of-day bin where finer resolution matters. The capacity model describes the regime where CPU is the binding resource; for the system studied, the controlled experiment places the boundary of that regime between 100% and 120% of nominal load. Beyond it, capacity is governed by network or disk I/O and a different model applies. The decision-support model in Sections 8 and 9 assumes an SLA contract whose revenue-share and fine schedule can be expressed as a piecewise function of availability; other contract structures can be handled by substituting RevenueShare(·) and Fine(·) accordingly.</p>
 </article>
