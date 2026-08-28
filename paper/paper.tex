@@ -61,14 +61,22 @@ claim on two independent public traces (Bitbrains GWA-T-12 fastStorage, 1\,250
 VMs; Bitbrains Rnd, roughly 500 VMs) totalling \NBinsAll{} hour-of-day
 distribution bins, and find that log-normal is the best-fitting family among
 \{normal, gamma, Weibull, log-normal\} by AIC in \LogNormShareAll{}\% of
-bins. We formalise the parameter-scaling law that follows from a
-multiplicative-overhead argument, test it against the fitted per-bin
-$\mu(\lambda)$ and $\sigma(\lambda)$, and evaluate the resulting sizing
-ceiling against three baselines commonly used in practice: empirical
-percentile with bootstrap confidence, mean-plus-$k\sigma$, and short-horizon
-LSTM forecasting. On coverage-versus-cost, the log-normal ceiling dominates
-mean-plus-$k\sigma$ and matches or beats the empirical percentile at half the
-sample-size requirement. Finally, we recast the decision-support layer with
+bins. We derive the parameter-scaling law that follows from the
+multiplicative-overhead argument (a monotone-increasing
+$\sigma_{\log C}(\lambda) = \sqrt{\alpha^2\lambda + \sigma_\varepsilon^2}$
+that corrects an earlier decreasing form in the original 2011 report) and
+fit it per VM. Direction matches: $\sigma$ increases with $\lambda$ on 105
+of 106 well-fitting VMs, and the load-response coefficient
+$\hat\alpha_\sigma$ rank-correlates with $\hat\alpha_\mu$ from the mean
+clause at Spearman 0.82 to 0.94. Magnitude does not: $\hat\alpha_\sigma$
+is systematically nine times larger than $\hat\alpha_\mu$, a demand-
+fluctuation excess that variance decomposition attributes to sub-hour
+burstiness (65\% of the variance increase) and day-to-day level shifts
+(35\%). We evaluate the resulting sizing ceiling against five baselines
+(empirical percentile, mean-plus-$k\sigma$, rolling maximum, quantile
+gradient boosting, exponentially weighted moving quantile) and find the
+log-normal ceiling attains the highest share-at-target coverage at a
+competitive predicted ceiling. Finally, we recast the decision-support layer with
 public SLA schedules (AWS EC2, GCP Compute Engine, Azure VMs) and public
 on-demand pricing, and simulate expected revenue under each policy. Code,
 preprocessing scripts, and a reproducibility container are released with the
@@ -408,6 +416,40 @@ ruled out: bimodality is ubiquitous (63\% of bins) but not correlated with
 load, so mode switching is not the driver; saturation is excluded (median
 peak p95 CPU is 4\%, only 14 of 106 VMs ever log a sample above 90\%);
 disk-I/O correlation with $\sigma$ is essentially zero.
+
+\paragraph{Per-VM mechanism consistency.} We refit the $\sigma$ clause per
+VM under both Form A (the paper's original, $\hat\gamma/\sqrt{\lambda} + \hat\delta$)
+and Form B (Equation~\ref{eq:sigmascaling}, $\sqrt{\hat\alpha_\sigma^2\lambda +
+\hat\sigma_\varepsilon^2}$), and compared the fitted $\hat\alpha_\sigma$
+against $\hat\alpha_\mu$ from the mean clause on the same VM
+(\texttt{scoping/refit\_form\_ab.py}). Neither Form A nor Form B fits the
+$\sigma(\lambda)$ pattern well in absolute $R^2$ (medians $\approx 0.10$-$0.15$
+for both), consistent with the demand-fluctuation excess above; Form B
+does not systematically improve over Form A on this data. Across the cohort
+where both fits are meaningful (51 fastStorage, 47 Rnd VMs), however,
+$\hat\alpha_\sigma$ rank-correlates strongly with $\hat\alpha_\mu$
+(Spearman $0.82$ / $0.94$, $p < 10^{-13}$): the load-response coefficient
+inferred from the variance clause tracks the one inferred from the mean
+clause across VMs. The magnitude gap is large and consistent: median
+$\hat\alpha_\sigma / \hat\alpha_\mu$ is $8.9$ on fastStorage and $9.4$ on
+Rnd. Under Form B the mechanism attributes all variance beyond
+$\sigma_\varepsilon^2$ to arrival-count noise, so this ratio quantifies how
+much the observed variance exceeds that attribution: roughly nine times as
+much, all of it load-proportional. Figure~\ref{fig:refit-ab} shows the
+per-VM fits for an exemplar and the paired $\hat\alpha$ scatter.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{fig_refit_ab.png}
+  \caption{Left and centre: per-VM $\mu(\lambda)$ linear fit and
+    $\sigma(\lambda)$ under Form A and Form B on an exemplar fastStorage
+    VM. Right: per-VM $\hat\alpha$ from the $\sigma$ (Form B) fit vs.\
+    $\hat\alpha$ from the $\mu$ fit across the well-fitting cohort; the
+    two are rank-consistent (dashed identity line) but $\hat\alpha_\sigma$
+    is systematically $\approx 9\times$ larger, the measured magnitude of
+    the demand-fluctuation excess.}
+  \label{fig:refit-ab}
+\end{figure}
 
 \paragraph{Interpretation.} At Bitbrains's 5-minute sampling each reading
 already averages thousands of events, so the pure
