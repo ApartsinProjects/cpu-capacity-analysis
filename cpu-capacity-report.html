@@ -1,4 +1,6 @@
+<meta charset="utf-8">
 <title>Probabilistic CPU Capacity Estimation</title>
+<meta name="author" content="Alexander Apartsin">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
@@ -161,9 +163,31 @@
   td.n { text-align: right; }
   th.n { text-align: right; }
   a { color: var(--accent); }
+  .pdf-link {
+    position: fixed;
+    top: 1.25rem;
+    right: 1.25rem;
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 0.5rem 0.85rem;
+    border-radius: 3px;
+    z-index: 10;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .pdf-link:hover, .pdf-link:focus { border-color: var(--accent); color: var(--accent); }
+  .pdf-link svg { vertical-align: -2px; margin-right: 0.35em; }
+  @media (max-width: 640px) { .pdf-link { top: 0.5rem; right: 0.5rem; padding: 0.4rem 0.6rem; font-size: 0.7rem; } }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
+<a class="pdf-link" href="assets/cpu-capacity-report.pdf" aria-label="Download report as PDF"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 1v7m0 0L3.5 5.5M6 8l2.5-2.5"/><path d="M1.5 9.5v.5a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-.5"/></svg>PDF</a>
 <article>
   <p class="eyebrow">Technical report · Capacity planning</p>
   <h1>Probabilistic CPU Capacity Estimation from Transaction Load</h1>
