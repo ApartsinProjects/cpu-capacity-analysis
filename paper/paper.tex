@@ -107,24 +107,23 @@ extrapolation baseline internal to the operator's team, not to standard
 practitioner alternatives or to data-driven forecasters. This paper puts
 the model on public data and against standard baselines.
 
-\paragraph{Why sizing accuracy is a dollar problem.} Two forces make this
-question a direct cost lever, not a modelling curiosity. First, SLA
-schedules are convex and steep near the promised availability: on our
+\paragraph{Why sizing accuracy is a dollar problem.} Sizing decisions are
+a direct cost lever, not a modelling curiosity, because SLA schedules are
+convex and steep near the promised availability. On our
 Section~\ref{sec:economics} simulation using public cloud SLAs (AWS EC2,
 GCP Compute Engine, Azure VMs), the difference between a sizing method
 that hits the target confidence in 83\% of bins and one that hits it in
 76\% translates to a 5.9-percentage-point gap in the fraction of billed
-revenue the operator keeps under AWS on fastStorage. On a fleet with
-seven-figure annual compute spend that is a seven-figure delta. Second,
-over-provisioning is not free even when coverage is met: a method that
-covers by piling up headroom (rolling maximum on the training window)
-reserves a median 19\% more capacity than the actual 99th-percentile
-demand of the test window, and 16\% more on the second trace. The
-addressable saving from picking the right sizing method is bounded below
-by the sum of those two effects and applies per VM per year for the life
-of the deployment. A one-parameter physically-motivated ceiling that
-closes both gaps is therefore a load-bearing operational component, not
-a stylistic choice.
+revenue the operator keeps under AWS on fastStorage (Table~\ref{tab:sla}).
+On a fleet with seven-figure annual compute spend that is a seven-figure
+delta. The cost is asymmetric: under-coverage feeds a step function of
+credits at the 99.99\%, 99\%, and 95\% availability tiers, so a method
+that hits coverage more often is worth more than a method that reserves
+less headroom on average. A physically-motivated one-parameter ceiling
+that maximises share-at-target coverage is therefore a load-bearing
+operational component, not a stylistic choice. The trade-off it makes,
+namely spending headroom in the tails to buy coverage, is quantified
+against five practitioner baselines in Section~\ref{sec:sizing}.
 
 \paragraph{Who this is for.} Capacity planners running managed
 transaction-processing services (billing platforms, ad servers, checkout
@@ -659,9 +658,12 @@ public trace supplies at scale; this is a natural direction for future work.
 \paragraph{From KS to modern goodness-of-fit.}
 Anderson-Darling and Cram\'er-von Mises tests are more sensitive to tail
 mismatch than KS and are appropriate when the goal is to certify that a fit
-is safe for tail-driven decisions like sizing. Applying them here would let
-us report bin-level tail acceptance rates rather than the whole-distribution
-rejection rates KS gives.
+is safe for tail-driven decisions like sizing. Table~\ref{tab:advcm}
+reports both statistics per family; log-normal has the smallest median on
+each. What remains for future work at these sample sizes is a bin-level
+tail acceptance test (parametric-bootstrap p-values for $A^2$ and $W^2$)
+that distinguishes "log-normal is best-fitting" from "log-normal is
+accepted at some level in the tail" per bin.
 
 \section{Reproducibility}
 \label{sec:reproducibility}
