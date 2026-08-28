@@ -347,29 +347,56 @@ distribution of goodness-of-fit ($R^2$) across VMs and the systematic
 residual pattern (Figure~\ref{fig:scaling}, TODO).
 
 We fit both parts on \ScalFsNVms{} fastStorage VMs and \ScalRnNVms{} Rnd VMs
-(minimum six hour-of-day bins per VM). Across VMs, the median $R^2$ of the
-$\mu(\lambda)$ fit is \ScalFsMuMedR{} on fastStorage and \ScalRnMuMedR{} on
-Rnd, and reaches or exceeds $0.5$ on only \ScalFsMuShareHalf{}\% and
-\ScalRnMuShareHalf{}\% of VMs respectively; the $\sigma(\lambda)$ fit is
-weaker still (median $R^2$ \ScalFsSigMedR{} / \ScalRnSigMedR{}). The median
-$\hat\alpha$ is small and positive (\ScalFsAlphaMed{} / \ScalRnAlphaMed{}) as
-expected, but the median $\hat\gamma$ is slightly negative
-(\ScalFsGammaMed{} / \ScalRnGammaMed{}) rather than the positive value
-$\sigma \propto 1/\sqrt{\lambda}$ predicts.
+(minimum six hour-of-day bins per VM). The aggregate is a mixed picture that
+deserves splitting. Across VMs, the median $R^2$ of the $\mu(\lambda)$ fit
+is \ScalFsMuMedR{} (fastStorage) and \ScalRnMuMedR{} (Rnd), the median of
+the $\sigma(\lambda)$ fit is \ScalFsSigMedR{} / \ScalRnSigMedR{}, and the
+median $\hat\alpha$ is small and positive (\ScalFsAlphaMed{} /
+\ScalRnAlphaMed{}) as predicted, but the median $\hat\gamma$ is
+\emph{negative} (\ScalFsGammaMed{} / \ScalRnGammaMed{}) rather than
+positive. Following the project convention of inspecting failing points
+before accepting an aggregate, we ran a diagnostic
+(see \texttt{scoping/SCALING\_DIAGNOSIS.md}) that separates the two clauses
+of the law and tests the load-proxy hypothesis directly.
 
-We report this plainly as a negative result on the mechanism: the log-normal
-\emph{shape} replicates in Section~\ref{sec:validation}, but the parameter
-\emph{scaling law} implied by the multiplicative-overhead derivation does
-not clearly hold across the heterogeneous Bitbrains VMs with network
-throughput as a load proxy. Two plausible reasons: (i) network throughput
-is at best a monotone but non-linear surrogate for the request-arrival rate
-$\lambda$, and different VMs sit on different segments of that surrogate
-curve; (ii) the original 2011 study fitted homogeneous billing servers with
-a single transaction type at five-second resolution, whereas Bitbrains VMs
-run heterogeneous workloads sampled every five minutes. Deciding the
-mechanism therefore requires paired arrival-rate and CPU data at high
-resolution on a single workload class, which no current public trace supplies
-at scale; this is a natural direction for follow-up work.
+\paragraph{The $\mu$ clause: directionally confirmed, proxy-limited $R^2$.}
+$\hat\alpha > 0$ on 85 to 90 percent of VMs. The low median $R^2_\mu$ hides
+a mixture: about a quarter of VMs have $R^2_\mu < 0.05$ and 13 to 15 percent
+have $R^2_\mu \geq 0.8$. Good $\mu$-fitters are consistently high-load VMs
+(median $\lambda_{\max}$ 44.9 KB/s in the $R^2_\mu \geq 0.8$ cohort vs.\
+9.5 KB/s in the rest, on fastStorage). Direct measurement of the load-proxy
+quality gives a median sample-level $\text{Spearman}(\text{CPU}, \text{net})$
+of $\approx 0.46$ on both traces, and the Spearman between the per-VM
+proxy quality and $R^2_\mu$ is $\approx 0.27$: better proxy, better $\mu$
+fit. Where the proxy carries signal and $\lambda$ varies within the day,
+the mean clause is linear with $R^2$ up to $0.98$.
+
+\paragraph{The $\sigma$ clause: refuted in direction, and not by the proxy.}
+Among VMs where the $\sigma(\lambda)$ curve fits well ($R^2_\sigma \geq
+0.5$), $\hat\gamma < 0$ in \textbf{98\%} of fastStorage VMs (51/52) and
+\textbf{100\%} of Rnd VMs (55/55). Restricted further to VMs that are
+\emph{also} strongly proxied ($\rho_{\text{CPU},\text{net}} \geq 0.5$), the
+wrong sign is unanimous (24/24 across both traces, median
+$\hat\gamma = -0.87$). A noise-driven sign error would dilute under those
+restrictions, not concentrate. The variance of $\log C$ across the bins of
+a hour-of-day panel on Bitbrains is a coherent \emph{increasing} function
+of $\lambda$: $\sigma$ grows concavely from a low-load minimum toward a
+high-load plateau, the mirror image of the $1/\sqrt{\lambda}$ prediction.
+
+\paragraph{A mechanism-consistent explanation.} The $1/\sqrt{\lambda}$
+shrinkage in the derivation is a central-limit-theorem term: it dominates
+when each measurement window aggregates a small number of transactions. At
+Bitbrains's 5-minute sampling every reading already averages thousands of
+events, so the CLT term is negligible and the dispersion an hour-of-day bin
+picks up is instead dominated by day-to-day and within-hour load
+fluctuation, which is multiplicative and grows with the load level. The
+original 2011 setting (5-second windows, single transaction class) sits in
+the opposite regime, where per-window event counts are small enough for the
+CLT term to dominate. On this reading, the scaling law is not refuted in
+principle but refuted \emph{at 5-minute resolution}: the two datasets are
+in different regimes of the same mechanism. Testing the law directly
+requires paired arrival-rate and CPU data at sub-minute resolution on a
+single workload class, which no current public trace supplies at scale.
 
 \section{Sizing Accuracy}
 \label{sec:sizing}
