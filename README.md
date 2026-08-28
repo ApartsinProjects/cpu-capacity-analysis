@@ -1,4 +1,4 @@
-# CPU Capacity Analysis
+# From CPU Load to Revenue: A Probabilistic Capacity Model
 
 A probabilistic method that predicts CPU utilization on a transaction-processing
 system from offered load, and turns that prediction into hardware sizing
@@ -22,7 +22,7 @@ short technical report and the source materials it draws on.
   the normal/linear and log-normal candidate models.
 - **`Capacity Analysis and Trends (CAT)_sasha.pptx`** — production-scale
   validation on 26 rating/balance servers over 30 days: log-normal CPU per
-  hourly bin, `C_top = exp(avg + 3·std of log CPU)` covers CPU at 99.8%
+  hourly bin, `C_top = exp(avg + 3*std of log CPU)` covers CPU at 99.8%
   probability.
 - **`DecisionSupportTool.pptx`** — decision-support model that combines the
   capacity distribution with a revenue-share / fines policy to compute
@@ -33,7 +33,7 @@ short technical report and the source materials it draws on.
 
 - **`ROI.xlsx`** — worked example of the decision-support model
   (20 servers, ~$70M annual revenue, tiered fines) with an hour-by-hour table
-  and the empirical CPU failure curve.
+  and the CPU failure curve.
 - **`RoiNew_v4.xlsx`** — quarterly sizing plan across two server generations
   with growth forecasts, availability projections, and purchase schedule.
 - **`Summary1.xlsx`** — fitted log-normal and normal/linear parameters
