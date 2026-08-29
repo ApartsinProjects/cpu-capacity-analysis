@@ -194,7 +194,7 @@
 
   <h2 class="sec"><span class="num">1</span>Introduction</h2>
   <p>Capacity planning for a transaction-processing service asks a single question: how much hardware do we need so that we honour our service-level objectives with high probability, without paying for headroom we never use? The question is easy to state and hard to answer, because CPU utilization at any moment is not a fixed function of offered load: it is a distribution whose tail governs the SLA and whose mean governs the bill. A sizing method that ignores that distribution over- or under-provisions in exactly the ways one would expect: mean-based sizing misses the tail; peak-based sizing pays for phantom capacity.</p>
-  <p>A 2011 technical report on a production transaction-processing platform addressed this by modelling CPU utilization <i class="v">C</i> at a fixed transaction load <i class="v">N</i> as log-normal, derived from a simple mechanism: each incoming transaction adds CPU load in proportion to the load already present, so Δ<i class="v">C</i>/Δ<i class="v">n</i> ∝ α<i class="v">C</i> integrates to log <i class="v">C</i> = α<i class="v">n</i> + β [1]. Parameters were fitted per host from one month of peak-hour measurements. The report was based on a proprietary dataset and compared the resulting sizing method to a linear extrapolation baseline internal to the operator's team, not to standard practitioner alternatives or to data-driven forecasters. This paper puts the model on public data and against standard baselines.</p>
+  <p>We approach the question with a probabilistic model of CPU utilization <i class="v">C</i> at a fixed transaction load <i class="v">N</i>: log-normal, derived from a simple mechanism, where each incoming transaction adds CPU load in proportion to the load already present, so Δ<i class="v">C</i>/Δ<i class="v">n</i> ∝ α<i class="v">C</i> integrates to log <i class="v">C</i> = α<i class="v">n</i> + β. The log-normal shape combined with a Poisson-arrival model for <i class="v">N</i> yields a distribution over <i class="v">C</i> at any given rate, and a one-parameter operational ceiling <i class="v">C</i><sub>top</sub> = exp{μ<sub>log C</sub> + <i class="v">k</i>σ<sub>log C</sub>} that covers CPU with a tunable target confidence. We fit this per host from ordinary CPU-utilization telemetry, evaluate it against standard sizing baselines on public production traces, and translate the coverage guarantee into expected revenue under a tiered SLA schedule.</p>
 
   <h3>Why sizing accuracy is a dollar problem</h3>
   <p>Sizing decisions are a direct cost lever, not a modelling curiosity, because SLA schedules are convex and steep near the promised availability. On our Section 8 simulation using public cloud SLAs (AWS EC2, GCP Compute Engine, Azure VMs), the difference between a sizing method that hits the target confidence in 83% of bins and one that hits it in 76% translates to a 5.9-percentage-point gap in the fraction of billed revenue the operator keeps under AWS on fastStorage (Table 5). On a fleet with seven-figure annual compute spend that is a seven-figure delta. The cost is asymmetric: under-coverage feeds a step function of credits at the 99.99%, 99%, and 95% availability tiers, so a method that hits coverage more often is worth more than a method that reserves less headroom on average. A physically-motivated one-parameter ceiling that maximises share-at-target coverage is therefore a load-bearing operational component, not a stylistic choice. The trade-off it makes, namely spending headroom in the tails to buy coverage, is quantified against five practitioner baselines in Section 7.</p>
@@ -212,9 +212,9 @@
   </ul>
 
   <h2 class="sec"><span class="num">2</span>Background and related work</h2>
-  <p><b>Statistical distributions of CPU utilization.</b> Empirical CPU distributions in production have been reported as heavy-tailed and right-skewed since at least Cortez et al.'s Resource Central study on Azure [2], which uses histogram-based prediction of percentile CPU without committing to a parametric family. Reiss et al. [3] characterise Google Borg workloads and note pronounced heterogeneity across machines. Log-normal has been proposed for various computer-system quantities including file sizes [4], request rates, and inter-arrival times, but we are unaware of a systematic per-bin log-normal test for CPU utilization on public production traces.</p>
-  <p><b>Capacity provisioning under uncertainty.</b> Meng et al. [5] present VM multiplexing with stochastic demand and derive multiplexing ratios that assume knowledge of the per-VM demand distribution; the log-normal fit we validate here supplies that distribution. Bodik et al. [6] learn SLO-preserving resource controllers with statistical machine learning. Autoscaling literature in cloud systems [7,8] tends to forecast the mean and provision to a fixed percentile; we compare against that practice.</p>
-  <p><b>Public workload traces.</b> The Grid Workloads Archive [9] standardised trace release for grid workloads; the Bitbrains traces [10] used here are part of that archive. Microsoft's Azure Public Dataset [2] and Alibaba's cluster-trace-v2018 [11] extend the picture to large public clouds.</p>
+  <p><b>Statistical distributions of CPU utilization.</b> Empirical CPU distributions in production have been reported as heavy-tailed and right-skewed since at least Cortez et al.'s Resource Central study on Azure [1], which uses histogram-based prediction of percentile CPU without committing to a parametric family. Reiss et al. [2] characterise Google Borg workloads and note pronounced heterogeneity across machines. Log-normal has been proposed for various computer-system quantities including file sizes [3], request rates, and inter-arrival times, but we are unaware of a systematic per-bin log-normal test for CPU utilization on public production traces.</p>
+  <p><b>Capacity provisioning under uncertainty.</b> Meng et al. [4] present VM multiplexing with stochastic demand and derive multiplexing ratios that assume knowledge of the per-VM demand distribution; the log-normal fit we validate here supplies that distribution. Bodik et al. [5] learn SLO-preserving resource controllers with statistical machine learning. Autoscaling literature in cloud systems [6,7] tends to forecast the mean and provision to a fixed percentile; we compare against that practice.</p>
+  <p><b>Public workload traces.</b> The Grid Workloads Archive [8] standardised trace release for grid workloads; the Bitbrains traces [9] used here are part of that archive. Microsoft's Azure Public Dataset [1] and Alibaba's cluster-trace-v2018 [10] extend the picture to large public clouds.</p>
 
   <h2 class="sec"><span class="num">3</span>The log-normal capacity model</h2>
   <p>Let <i class="v">C</i> denote CPU utilization measured over a five-second interval, <i class="v">N</i> the average number of transactions per hour, <i class="v">B</i> the maximum CPU utilization at which service-level objectives are met, and <i class="v">A</i> a tolerance threshold. The sizing task is: find the maximum sustained rate <i class="v">N</i><sub>0</sub> such that <i class="v">P</i>(<i class="v">C</i> &lt; <i class="v">B</i> | <i class="v">N</i> = <i class="v">N</i><sub>0</sub>) &gt; 1 − <i class="v">A</i>.</p>
@@ -246,8 +246,8 @@
     </thead>
     <tbody>
       <tr><td>Origin (2011 industrial trace)</td><td class="n">26</td><td class="n">30 days</td><td class="n">5 s</td><td>proprietary</td></tr>
-      <tr><td>Bitbrains fastStorage</td><td class="n">1,250</td><td class="n">30 days</td><td class="n">5 min</td><td>public [10]</td></tr>
-      <tr><td>Bitbrains Rnd</td><td class="n">~500</td><td class="n">30 days</td><td class="n">5 min</td><td>public [10]</td></tr>
+      <tr><td>Bitbrains fastStorage</td><td class="n">1,250</td><td class="n">30 days</td><td class="n">5 min</td><td>public [9]</td></tr>
+      <tr><td>Bitbrains Rnd</td><td class="n">~500</td><td class="n">30 days</td><td class="n">5 min</td><td>public [9]</td></tr>
     </tbody>
   </table>
 
@@ -395,9 +395,9 @@
   <p class="eq"><i class="v">R</i> = RevenueShare(<i class="v">A</i>) · ARPE · <i class="v">S</i> − Fine(<i class="v">A</i>).</p>
   <p>In the original industrial study, RevenueShare(·) and Fine(·) were the operator's proprietary SLA schedule. To make this reproducible we substitute three public schedules:</p>
   <ul>
-    <li><b>AWS EC2:</b> 10% credit below 99.99% monthly uptime, 25% below 99.0%, 100% below 95.0% [12].</li>
-    <li><b>GCP Compute Engine:</b> 10% credit below 99.99%, 25% below 99.0%, 50% below 95.0% [13].</li>
-    <li><b>Azure Virtual Machines:</b> 10% credit below 99.99%, 25% below 99.0%, 100% below 95.0% [14].</li>
+    <li><b>AWS EC2:</b> 10% credit below 99.99% monthly uptime, 25% below 99.0%, 100% below 95.0% [11].</li>
+    <li><b>GCP Compute Engine:</b> 10% credit below 99.99%, 25% below 99.0%, 50% below 95.0% [12].</li>
+    <li><b>Azure Virtual Machines:</b> 10% credit below 99.99%, 25% below 99.0%, 100% below 95.0% [13].</li>
   </ul>
   <p>We evaluate the four sizing methods from Section 7 under each schedule. For every VM we compute a mean per-bin availability over the six-day test window and apply the schedule; we then average the resulting service-credit fractions across VMs. Table 5 reports the mean net revenue ratio (a value of 100% means the operator keeps every dollar of billed revenue; 90% means the SLA reclaims 10% of it).</p>
 
@@ -437,7 +437,6 @@
   <h2 class="sec">References</h2>
   <div class="refs">
     <ol>
-      <li>A. Apartsin. From CPU Load to Revenue: A Probabilistic Capacity Model. Technical report, 2011. Updated August 2026. <a href="https://apartsinprojects.github.io/cpu-capacity-analysis/">apartsinprojects.github.io/cpu-capacity-analysis</a>.</li>
       <li>E. Cortez, A. Bonde, A. Muzio, M. Russinovich, M. Fontoura, and R. Bianchini. Resource Central: Understanding and predicting workloads for improved resource management in large cloud platforms. In <i>SOSP</i>, 2017.</li>
       <li>C. Reiss, A. Tumanov, G. R. Ganger, R. H. Katz, and M. A. Kozuch. Heterogeneity and dynamicity of clouds at scale: Google trace analysis. In <i>SoCC</i>, 2012.</li>
       <li>A. B. Downey. The structural cause of file size distributions. <i>ACM SIGMETRICS Performance Evaluation Review</i>, 29(1):328-329, 2001.</li>
