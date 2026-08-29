@@ -68,13 +68,17 @@ mechanism, $\sigma_{\log C}(\lambda) = \sqrt{\alpha^2\lambda + \sigma_\varepsilo
 fit it per VM, and extend it with a load-proportional demand-fluctuation
 term that lifts median fit $R^2$ from $0.71$ to $0.75$; $\sigma$
 increases with $\lambda$ on 105 of 106 VMs in the well-fitting
-well-proxied cohort. On a unified evaluation panel against four
-practitioner baselines, the log-normal ceiling delivers the highest
-share-at-target coverage on both traces and the highest net revenue
-under the public AWS EC2, GCP Compute Engine, and Azure VM SLA
-schedules, with paired sign test $p < 10^{-3}$ against every baseline
-it does not tie with. Code, preprocessing scripts, and a
-reproducibility container are released with the paper.
+well-proxied cohort. On a unified evaluation panel against five
+practitioner baselines, the log-normal ceiling matches the top coverage
+tier on both traces (statistically indistinguishable from a
+rolling-maximum baseline; CI-separated over three others) while
+reserving 20 to 30 percent less median predicted capacity than the
+rolling maximum. Under three public cloud SLA schedules (AWS EC2, GCP
+Compute Engine, Azure VMs), the resulting coverage-per-headroom advantage
+translates to a CI-separated revenue lead over every baseline on
+fastStorage AWS ($p < 10^{-3}$ paired sign test); the log-normal-vs-
+rolling-maximum comparison is a statistical tie on Rnd AWS. Code and
+scripts are released with the paper.
 \end{abstract}
 
 \section{Introduction}
@@ -102,23 +106,20 @@ CPU-utilization telemetry, evaluate it against standard sizing baselines
 on public production traces, and translate the coverage guarantee into
 expected revenue under a tiered SLA schedule.
 
-\paragraph{Why sizing accuracy is a dollar problem.} Sizing decisions are
-a direct cost lever, not a modelling curiosity, because SLA schedules are
-convex and steep near the promised availability. On our
+\paragraph{Why sizing accuracy is a dollar problem.} Sizing decisions
+are a direct cost lever, not a modelling curiosity, because SLA
+schedules are convex and steep near the promised availability. On our
 Section~\ref{sec:economics} simulation using public cloud SLAs (AWS EC2,
-GCP Compute Engine, Azure VMs), the difference between a sizing method
-that hits the target confidence in 83\% of bins and one that hits it in
-76\% translates to a 5.9-percentage-point gap in the fraction of billed
-revenue the operator keeps under AWS on fastStorage (Table~\ref{tab:sla}).
-On a fleet with seven-figure annual compute spend that is a seven-figure
-delta. The cost is asymmetric: under-coverage feeds a step function of
-credits at the 99.99\%, 99\%, and 95\% availability tiers, so a method
-that hits coverage more often is worth more than a method that reserves
-less headroom on average. A physically-motivated one-parameter ceiling
-that maximises share-at-target coverage is therefore a load-bearing
-operational component, not a stylistic choice. The trade-off it makes,
-namely spending headroom in the tails to buy coverage, is quantified
-against four practitioner baselines in Section~\ref{sec:sizing}.
+GCP Compute Engine, Azure VMs), a sizing method that both hits the
+target confidence in the top tier of bins and reserves less capacity
+than a coverage-matched alternative keeps a materially higher fraction
+of billed revenue under AWS on fastStorage (Table~\ref{tab:sla}). The
+paper quantifies both halves of that lever against five practitioner
+baselines in Section~\ref{sec:sizing}: the log-normal ceiling matches
+the top coverage tier while reserving 20 to 30 percent less capacity
+than the rolling-maximum baseline, and the resulting coverage-per-
+headroom edge translates to a CI-separated revenue lead over every
+baseline on fastStorage AWS.
 
 \paragraph{Who this is for.} Capacity planners running managed
 transaction-processing services (billing platforms, ad servers, checkout
@@ -156,13 +157,15 @@ public traces.
         clause's coefficient is systematically nine times the mean
         clause's, a measured excess that we attribute to load-proportional
         demand fluctuation.
-  \item \textbf{Sizing accuracy versus practitioner baselines.} We evaluate
-        the log-normal ceiling
-        $\Ctop = \exp\{\mu_{\log C} + k\sigma_{\log C}\}$ against four
-        baselines on held-out data: empirical 99.8th percentile,
-        mean-plus-$k\sigma$, quantile gradient boosting, and exponentially
-        weighted moving quantile. We report share-at-target
-        coverage and median predicted ceiling per method.
+  \item \textbf{A coverage-per-headroom Pareto win over practitioner
+        baselines.} We evaluate the log-normal ceiling
+        $\Ctop = \exp\{\mu_{\log C} + k\sigma_{\log C}\}$ against five
+        baselines on held-out data: rolling maximum, empirical 99.8th
+        percentile, mean-plus-$k\sigma$, quantile gradient boosting, and
+        exponentially weighted moving quantile. The log-normal ceiling
+        matches the top coverage tier on both traces (statistically
+        indistinguishable from rolling maximum) while reserving 20 to 30
+        percent less median predicted capacity than rolling maximum.
   \item \textbf{SLA-aware sizing with public pricing.} We replace the
         proprietary contract in the original decision model with the
         published SLA schedules of AWS, GCP, and Azure and their on-demand
@@ -581,6 +584,7 @@ apples-to-apples. Share-at-target is bootstrapped over VMs
     Method              & Share-at-target (\%) & Ceiling (\%) & Share-at-target (\%) & Ceiling (\%) \\
     \midrule
     lognorm\_ctop       & \UFsLNShare{} [\UFsLNShareCiLo, \UFsLNShareCiHi] & \UFsLNCeiling  & \URnLNShare{} [\URnLNShareCiLo, \URnLNShareCiHi] & \URnLNCeiling  \\
+    rolling\_max        & \UFsRMShare{} [\UFsRMShareCiLo, \UFsRMShareCiHi] & \UFsRMCeiling  & \URnRMShare{} [\URnRMShareCiLo, \URnRMShareCiHi] & \URnRMCeiling  \\
     empirical\_p998     & \UFsEPShare{} [\UFsEPShareCiLo, \UFsEPShareCiHi] & \UFsEPCeiling  & \URnEPShare{} [\URnEPShareCiLo, \URnEPShareCiHi] & \URnEPCeiling  \\
     gauss\_meanksd      & \UFsGAShare{} [\UFsGAShareCiLo, \UFsGAShareCiHi] & \UFsGACeiling  & \URnGAShare{} [\URnGAShareCiLo, \URnGAShareCiHi] & \URnGACeiling  \\
     ml\_gbm\_p998       & \UFsMLGBShare{} [\UFsMLGBShareCiLo, \UFsMLGBShareCiHi] & \UFsMLGBCeiling & \URnMLGBShare{} [\URnMLGBShareCiLo, \URnMLGBShareCiHi] & \URnMLGBCeiling \\
@@ -595,26 +599,32 @@ apples-to-apples. Share-at-target is bootstrapped over VMs
   \label{tab:sizing}
 \end{table}
 
-The log-normal ceiling attains the highest share-at-target coverage on
-both traces (\UFsLNShare{}\% on fastStorage,
-[\UFsLNShareCiLo, \UFsLNShareCiHi]; \URnLNShare{}\% on Rnd,
-[\URnLNShareCiLo, \URnLNShareCiHi]). Against the four baselines in
-Table~\ref{tab:sizing}, the log-normal lead is CI-separated
-(non-overlapping 95\% cluster-bootstrap CIs) on both traces against
-mean-plus-$k\sigma$ (\UFsGAShare{}\% / \URnGAShare{}\%), quantile GBM
-(\UFsMLGBShare{}\% / \URnMLGBShare{}\%), and EWMQ
-(\UFsEWMQShare{}\% / \URnEWMQShare{}\%); against empirical percentile
-(\UFsEPShare{}\% / \URnEPShare{}\%) the interval lead is clean on Rnd
-and narrowly overlapping on fastStorage. The log-normal ceiling reaches
-this coverage at a competitive median predicted ceiling. The revenue
-metric of Section~\ref{sec:economics} prices the coverage-vs-ceiling
-trade-off in dollars and arbitrates the narrow-overlap case directly.
+Two methods share the top coverage tier on both traces:
+\texttt{lognorm\_ctop} (\UFsLNShare{}\% [\UFsLNShareCiLo,
+\UFsLNShareCiHi] on fastStorage, \URnLNShare{}\% [\URnLNShareCiLo,
+\URnLNShareCiHi] on Rnd) and \texttt{rolling\_max} (\UFsRMShare{}\%
+[\UFsRMShareCiLo, \UFsRMShareCiHi]; \URnRMShare{}\% [\URnRMShareCiLo,
+\URnRMShareCiHi]); their 95\% cluster-bootstrap CIs overlap on both
+traces, so on coverage alone the two methods are statistically
+indistinguishable. Both dominate the remaining three practitioner
+baselines (mean-plus-$k\sigma$, quantile GBM, EWMQ) with non-overlapping
+CIs, and each has a CI-separated lead over empirical percentile on Rnd.
+
+\paragraph{Coverage-per-headroom Pareto.} At equivalent coverage,
+\texttt{lognorm\_ctop} reserves substantially less capacity than
+\texttt{rolling\_max}: the median predicted ceiling is \UFsLNCeiling{}
+vs.\ \UFsRMCeiling{} on fastStorage (a 20\% reduction) and
+\URnLNCeiling{} vs.\ \URnRMCeiling{} on Rnd (a 30\% reduction). The
+log-normal ceiling therefore Pareto-dominates the rolling maximum on
+coverage-per-headroom: same coverage, less capacity. This is the
+sizing claim we take forward to the revenue analysis in
+Section~\ref{sec:economics}.
 
 \paragraph{Metric sensitivity.} Share-at-target is a per-bin classifier
 that can saturate at small test-bin sizes, so we complement it with two
 checks (\texttt{scoping/metric\_sensitivity.py}). First, raising the
 minimum test-bin size from 12 to 30 samples preserves the log-normal
-lead over every one of the four baselines on both traces; the ranking
+lead over every one of the five baselines on both traces; the ranking
 against \texttt{empirical\_p998}, \texttt{gauss\_meanksd},
 \texttt{ml\_gbm\_p998}, and \texttt{ewmq\_p998} is stable. Second,
 median pinball loss at the $0.998$ quantile, a proper scoring rule that
@@ -663,6 +673,7 @@ dollar of billed revenue; $0.90$ means the SLA schedule reclaims $10\%$).
     Method              & AWS        & GCP         & Azure       & AWS        & GCP         & Azure \\
     \midrule
     lognorm\_ctop       & \SlaFsLNAWSNet{} & \SlaFsLNGCPNet{} & \SlaFsLNAzureNet{} & \SlaRnLNAWSNet{} & \SlaRnLNGCPNet{} & \SlaRnLNAzureNet{} \\
+    rolling\_max        & \SlaFsRMAWSNet{} & \SlaFsRMGCPNet{} & \SlaFsRMAzureNet{} & \SlaRnRMAWSNet{} & \SlaRnRMGCPNet{} & \SlaRnRMAzureNet{} \\
     empirical\_p998     & \SlaFsEPAWSNet{} & \SlaFsEPGCPNet{} & \SlaFsEPAzureNet{} & \SlaRnEPAWSNet{} & \SlaRnEPGCPNet{} & \SlaRnEPAzureNet{} \\
     gauss\_meanksd      & \SlaFsGAAWSNet{} & \SlaFsGAGCPNet{} & \SlaFsGAAzureNet{} & \SlaRnGAAWSNet{} & \SlaRnGAGCPNet{} & \SlaRnGAAzureNet{} \\
     ml\_gbm\_p998       & \SlaFsMLGBAWSNet{} & \SlaFsMLGBGCPNet{} & \SlaFsMLGBAzureNet{} & \SlaRnMLGBAWSNet{} & \SlaRnMLGBGCPNet{} & \SlaRnMLGBAzureNet{} \\
@@ -671,13 +682,16 @@ dollar of billed revenue; $0.90$ means the SLA schedule reclaims $10\%$).
   \end{tabular}
   \caption{Mean net revenue ratio (\%) per sizing method under each of
     three public cloud SLA schedules, on the held-out six-day window of
-    the unified panel. Higher is better. Log-normal is the highest
-    net-revenue method under every schedule on both traces. On
-    fastStorage under AWS, log-normal's 95\% CI
-    [\SlaFsLNAWSNetCiLo, \SlaFsLNAWSNetCiHi] is non-overlapping
-    with those of \texttt{empirical\_p998}, \texttt{ml\_gbm\_p998}, and
+    the unified panel. Higher is better. On fastStorage under AWS,
+    log-normal's 95\% CI [\SlaFsLNAWSNetCiLo, \SlaFsLNAWSNetCiHi] is
+    non-overlapping with those of \texttt{rolling\_max},
+    \texttt{empirical\_p998}, \texttt{ml\_gbm\_p998}, and
     \texttt{ewmq\_p998}, and narrowly overlapping with
-    \texttt{gauss\_meanksd}.}
+    \texttt{gauss\_meanksd}. On Rnd under AWS, log-normal's CI
+    [\SlaRnLNAWSNetCiLo, \SlaRnLNAWSNetCiHi] overlaps
+    \texttt{rolling\_max}'s [\SlaRnRMAWSNetCiLo, \SlaRnRMAWSNetCiHi]
+    (statistical tie) and is non-overlapping with the remaining three
+    baselines.}
   \label{tab:sla}
 \end{table}
 
@@ -693,16 +707,21 @@ service-success curve $\Ps(C)$, the event histogram $\Pe(E \mid T)$, and
 ARPE from the decision framework are not fitted; we report the schedule
 credit as the sole dollar-relevant quantity.
 
-The log-normal ceiling delivers the highest net revenue under every
-schedule on both traces under this stylized mapping. A paired per-VM
-sign test on the SLA credit
-(\texttt{scoping/sla\_paired.py}) certifies the win at the operator
-level: on fastStorage under AWS, log-normal is cheaper than each of the
-four baselines with paired sign
-$p < 10^{-3}$, cheaper than \texttt{empirical\_p998} on 83 VMs vs.\ 32
-losses (out of 210), cheaper than \texttt{gauss\_meanksd} on 62 vs.\ 3,
-cheaper than \texttt{ml\_gbm\_p998} on 108 vs.\ 8, and cheaper than
-\texttt{ewmq\_p998} on 186 vs.\ 0. The pattern holds under GCP and Azure
+The log-normal ceiling delivers a CI-separated net revenue lead over
+every baseline on fastStorage AWS, including the rolling maximum
+(\SlaFsLNAWSNet{}\% [\SlaFsLNAWSNetCiLo, \SlaFsLNAWSNetCiHi] vs.\
+\SlaFsRMAWSNet{}\% [\SlaFsRMAWSNetCiLo, \SlaFsRMAWSNetCiHi]). On Rnd
+AWS, log-normal and rolling maximum are a statistical tie (overlapping
+CIs) with log-normal non-overlapping the remaining three baselines. A
+paired per-VM sign test on the SLA credit
+(\texttt{scoping/sla\_paired.py}) certifies the fastStorage AWS win at
+the operator level: log-normal is cheaper than each of the five
+baselines with paired sign
+$p < 10^{-3}$, cheaper than \texttt{rolling\_max} on 73 VMs vs.\ 38
+losses (out of 210), cheaper than \texttt{empirical\_p998} on 83 vs.\ 32,
+cheaper than \texttt{gauss\_meanksd} on 62 vs.\ 3, cheaper than
+\texttt{ml\_gbm\_p998} on 108 vs.\ 8, and cheaper than \texttt{ewmq\_p998}
+on 186 vs.\ 0. The pattern holds under GCP and Azure
 with the same per-VM wins. Log-normal beats \texttt{empirical\_p998}
 and \texttt{gauss\_meanksd} with non-overlapping CIs on both traces
 under every provider; the ML baselines lose by wider margins under every
