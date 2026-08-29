@@ -1,0 +1,21 @@
+{
+  "alibaba": {
+    "n_vms": 298,
+    "n_bins": 7145,
+    "point": 0.636744966442953,
+    "ci_low": 0.6185647371364652,
+    "ci_hi": 0.6554844798657717,
+    "lognorm_share": 0.6364,
+    "gamma_share": 0.239,
+    "weibull_share": 0.0341,
+    "normal_share": 0.0904
+  },
+  "combined_three": {
+    "n_vms": 875,
+    "n_bins": 19624,
+    "point": 0.6671138935222075,
+    "ci_low": 0.6460521024814979,
+    "ci_hi": 0.6875705118183629,
+    "bin_weighted_share": 0.6663345342437831
+  }
+}

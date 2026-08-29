@@ -1,0 +1,38 @@
+{
+  "n_vms_used": 298,
+  "n_bins": 7145,
+  "min_samples_per_bin": 60,
+  "best_aic_share": {
+    "lognorm": 0.6364,
+    "gamma": 0.239,
+    "norm": 0.0904,
+    "weibull_min": 0.0341
+  },
+  "median_aic": {
+    "lognorm": 18156.408,
+    "norm": 18425.227,
+    "gamma": 18196.026,
+    "weibull_min": 18559.617
+  },
+  "ks_not_rejected_at_0.05": {
+    "lognorm": 0.0083,
+    "norm": 0.0032,
+    "gamma": 0.0056,
+    "weibull_min": 0.0014
+  },
+  "aic_lognorm_minus_norm": {
+    "median": -194.966,
+    "share_lognorm_wins": 0.8214,
+    "share_lognorm_wins_by_>=_2": 0.8189
+  },
+  "aic_lognorm_minus_gamma": {
+    "median": -22.591,
+    "share_lognorm_wins": 0.6364,
+    "share_lognorm_wins_by_>=_2": 0.6252
+  },
+  "aic_lognorm_minus_weibull_min": {
+    "median": -378.295,
+    "share_lognorm_wins": 0.8978,
+    "share_lognorm_wins_by_>=_2": 0.8971
+  }
+}

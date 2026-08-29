@@ -52,15 +52,17 @@ over-provisioning wastes infrastructure budget, under-provisioning drops
 transactions and triggers SLA penalties. Sound sizing rests on one
 quantity: given a transaction rate, the probability that CPU utilization
 stays below the level at which service-level objectives are met. We
-revisit a probabilistic answer proposed in a 2011 industry study, which
-modelled CPU utilization at fixed load as log-normal and combined it with
-Poisson event arrivals to produce a capacity ceiling and, under a tiered
-SLA schedule, an expected-revenue estimate. We reproduce the log-normal
-claim on two independent public traces (Bitbrains GWA-T-12 fastStorage,
-1\,250 VMs; Bitbrains Rnd, 500 VMs) totalling \NBinsAll{} hour-of-day
-distribution bins: log-normal is the best-fitting family among
-\{normal, gamma, Weibull, log-normal\} by AIC in \LogNormShareAll{}\% of
-bins (95\% cluster-bootstrap CI [\LogNormShareAllCiLo, \LogNormShareAllCiHi]).
+present a probabilistic answer built on a log-normal model of CPU at
+fixed load combined with Poisson event arrivals, which produces a
+capacity ceiling and, under a tiered SLA schedule, an expected-revenue
+estimate. We evaluate the log-normal claim on three independent public
+traces from two providers (Bitbrains GWA-T-12 fastStorage, 1\,250 VMs;
+Bitbrains Rnd, 500 VMs; Alibaba cluster-trace-v2018, \AliVms{} sampled
+machines) totalling \CombinedNBins{} hour-of-day distribution bins:
+log-normal is the best-fitting family among \{normal, gamma, Weibull,
+log-normal\} by AIC in \CombinedLogNormShareVmw{}\% of VM-hour bins
+(95\% cluster-bootstrap CI
+[\CombinedLogNormShareCiLo, \CombinedLogNormShareCiHi]).
 We derive the parameter-scaling law implied by the multiplicative-overhead
 mechanism, $\sigma_{\log C}(\lambda) = \sqrt{\alpha^2\lambda + \sigma_\varepsilon^2}$,
 fit it per VM, and extend it with a load-proportional demand-fluctuation
@@ -134,11 +136,14 @@ public traces.
 
 \begin{itemize}
   \item \textbf{Independent replication at scale.} We fit per-VM, per-hour
-        log-normal distributions on two public production traces
-        (Bitbrains fastStorage and Bitbrains Rnd) totalling \NVmsAll{} VMs
-        and \NBinsAll{} distribution bins, and compare against normal,
-        gamma, and Weibull alternatives using AIC and one-sample KS. Log-normal
-        is the best-fitting family in \LogNormShareAll{}\% of bins overall.
+        log-normal distributions on three public production traces from
+        two providers (Bitbrains fastStorage, Bitbrains Rnd, Alibaba
+        cluster-trace-v2018), totalling \CombinedNVms{} units and
+        \CombinedNBins{} distribution bins, and compare against normal,
+        gamma, and Weibull alternatives using AIC and one-sample KS.
+        Log-normal is the best-fitting family in \CombinedLogNormShareVmw{}\%
+        of VM-hour bins overall (95\% cluster-bootstrap CI
+        [\CombinedLogNormShareCiLo, \CombinedLogNormShareCiHi]).
   \item \textbf{Parameter-scaling law from first principles.} We derive
         $\mu(\lambda) = \alpha\lambda + \beta$ and the
         standard-deviation form
@@ -274,18 +279,19 @@ Equation~\eqref{eq:sigmascaling} is verified in a controlled simulation
 \section{Datasets}
 \label{sec:datasets}
 
-All empirical results come from two public Bitbrains traces from the Grid
-Workloads Archive at TU Delft (Table~\ref{tab:datasets}).
+All empirical results come from three public production traces spanning
+two providers (Table~\ref{tab:datasets}).
 
 \begin{table}[t]
   \centering
   \small
   \begin{tabular}{lrrrl}
     \toprule
-    Trace & VMs & Duration & Resolution & Access \\
+    Trace & Servers/VMs & Duration & Resolution & Access \\
     \midrule
-    Bitbrains GWA-T-12 fastStorage    & 1\,250 & 30 days & 5 min & public~\cite{shen2015bitbrains} \\
-    Bitbrains GWA-T-12 Rnd            & 500   & 30 days & 5 min & public~\cite{shen2015bitbrains} \\
+    Bitbrains GWA-T-12 fastStorage    & 1\,250  & 30 days & 5 min  & public~\cite{shen2015bitbrains} \\
+    Bitbrains GWA-T-12 Rnd            & 500    & 30 days & 5 min  & public~\cite{shen2015bitbrains} \\
+    Alibaba cluster-trace-v2018       & ~4\,000 & 8 days  & 10 s   & public~\cite{alibaba2018trace} \\
     \bottomrule
   \end{tabular}
   \caption{Public Bitbrains traces used in this paper.}
@@ -297,16 +303,20 @@ Workloads Archive at TU Delft (Table~\ref{tab:datasets}).
 
 \subsection{Method}
 
-For each VM, we group CPU-utilization readings by hour of day (24 bins per
-VM). We sample 300 VMs per trace (seed 42) from the 1,250 fastStorage
-and 500 Rnd VMs. After dropping files with malformed columns, the sample
-yields \NVmsFs{} and \NVmsRnd{} VMs; retaining every hour-of-day bin with
-at least 60 samples gives \NBinsFs{} and \NBinsRnd{} bins. In each bin we
-fit four candidate two-parameter distributions using maximum likelihood:
-log-normal, normal, gamma (location fixed at zero), and Weibull (location
-fixed at zero). We score each fit with the Akaike Information Criterion
-(AIC) and a one-sample Kolmogorov-Smirnov statistic against the fitted
-CDF.
+For each VM or machine, we group CPU-utilization readings by hour of day
+(24 bins per unit). On the two Bitbrains traces we sample 300 VMs per
+trace (seed 42) from the 1,250 fastStorage and 500 Rnd VMs; on the
+Alibaba trace we stream the machine\_usage table and accept the first
+400 distinct machines encountered. After dropping malformed rows and
+retaining every hour-of-day bin with at least 60 samples, the sample
+yields \NVmsFs{}, \NVmsRnd{}, and \AliVms{} units and \NBinsFs{},
+\NBinsRnd{}, and \AliBins{} bins on fastStorage, Rnd, and Alibaba
+respectively (\CombinedNVms{} units and \CombinedNBins{} bins in total).
+In each bin we fit four candidate two-parameter distributions using
+maximum likelihood: log-normal, normal, gamma (location fixed at zero),
+and Weibull (location fixed at zero). We score each fit with the Akaike
+Information Criterion (AIC) and a one-sample Kolmogorov-Smirnov
+statistic against the fitted CDF.
 
 \subsection{Results}
 \label{sec:validation-results}
@@ -317,18 +327,22 @@ the best fit by AIC.
 \begin{table}[t]
   \centering
   \small
-  \begin{tabular}{lrrr}
+  \begin{tabular}{lrrrr}
     \toprule
-    & fastStorage & Rnd & Combined \\
-    Family     & (\NBinsFs{} bins) & (\NBinsRnd{} bins) & (\NBinsAll{} bins) \\
+    & fastStorage & Rnd & Alibaba & Combined \\
+    Family     & (\NBinsFs{} bins) & (\NBinsRnd{} bins) & (\AliBins{} bins) & (\CombinedNBins{} bins) \\
     \midrule
-    Log-normal & \FsLogNorm{}\%   & \RndLogNorm{}\%   & \LogNormShareAll{}\% \\
-    Weibull    & \FsWeibull{}\%   & \RndWeibull{}\%   & \WeibullShareAll{}\% \\
-    Gamma      & \FsGamma{}\%     & \RndGamma{}\%     & \GammaShareAll{}\%   \\
-    Normal     & \FsNormal{}\%    & \RndNormal{}\%    & \NormalShareAll{}\%  \\
+    Log-normal & \FsLogNorm{}\%   & \RndLogNorm{}\%   & \AliLogNorm{}\%   & \CombinedLogNormShare{}\% \\
+    Weibull    & \FsWeibull{}\%   & \RndWeibull{}\%   & \AliWeibull{}\%   & \WeibullShareAll{}\% \\
+    Gamma      & \FsGamma{}\%     & \RndGamma{}\%     & \AliGamma{}\%     & \GammaShareAll{}\%   \\
+    Normal     & \FsNormal{}\%    & \RndNormal{}\%    & \AliNormal{}\%    & \NormalShareAll{}\%  \\
     \bottomrule
   \end{tabular}
-  \caption{Best-fitting distribution family per hour-of-day bin, by AIC.}
+  \caption{Best-fitting distribution family per hour-of-day bin, by AIC.
+    The Combined column is bin-weighted; the abstract's headline
+    \CombinedLogNormShareVmw{}\% [\CombinedLogNormShareCiLo,
+    \CombinedLogNormShareCiHi] is the VM-weighted variant with a
+    cluster-bootstrap CI.}
   \label{tab:winner-share}
 \end{table}
 
@@ -389,7 +403,7 @@ of bins on fastStorage and \RnCvmShareLN{}\% on Rnd for $W^2$).
   \centering
   \includegraphics[width=0.72\linewidth]{fig_best_fit_share.pdf}
   \caption{Share of hour-of-day distribution bins in which each family is
-           the best fit by AIC, across the two public traces used in this
+           the best fit by AIC, across the three public traces used in this
            study.}
   \label{fig:winner-share}
 \end{figure}
