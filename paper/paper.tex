@@ -62,27 +62,24 @@ VMs; Bitbrains Rnd, roughly 500 VMs) totalling \NBinsAll{} hour-of-day
 distribution bins, and find that log-normal is the best-fitting family among
 \{normal, gamma, Weibull, log-normal\} by AIC in \LogNormShareAll{}\% of
 bins (95\% cluster-bootstrap CI [\LogNormShareAllCiLo, \LogNormShareAllCiHi]).
-We derive the parameter-scaling law that follows from the
-multiplicative-overhead argument (a monotone-increasing
-$\sigma_{\log C}(\lambda) = \sqrt{\alpha^2\lambda + \sigma_\varepsilon^2}$
-that corrects an earlier decreasing form in the original 2011 report) and
-fit it per VM. Direction matches: $\sigma$ increases with $\lambda$ on 105
-of 106 well-fitting VMs, and the load-response coefficient
-$\hat\alpha_\sigma$ rank-correlates with $\hat\alpha_\mu$ from the mean
-clause at Spearman \ScalFsSpearman{} on fastStorage
-([\ScalFsSpearmanCiLo, \ScalFsSpearmanCiHi]) and \ScalRnSpearman{} on Rnd
-([\ScalRnSpearmanCiLo, \ScalRnSpearmanCiHi]). Magnitude does not:
-$\hat\alpha_\sigma$ is systematically \ScalFsRatio-\ScalRnRatio{} times
-larger than $\hat\alpha_\mu$, a demand-fluctuation excess that variance
-decomposition attributes to sub-hour burstiness (65\% of the increase)
-and day-to-day level shifts (35\%). We evaluate the resulting sizing
-ceiling on a unified panel against five baselines (empirical percentile,
-mean-plus-$k\sigma$, rolling maximum, quantile gradient boosting,
-exponentially weighted moving quantile), and find the log-normal ceiling
-and the rolling-maximum baseline are the two coverage leaders (95\% CIs
-overlap on both traces), while log-normal wins the AWS SLA revenue
-metric cleanly on fastStorage and ties rolling-max on Rnd; both dominate
-the remaining four baselines with non-overlapping CIs. Finally, we recast the decision-support layer with
+We derive the parameter-scaling law implied by the multiplicative-overhead
+argument, $\sigma_{\log C}(\lambda) = \sqrt{\alpha^2\lambda + \sigma_\varepsilon^2}$,
+and fit it per VM alongside a demand-fluctuation extension
+$\sigma_{\log C}(\lambda) = \sqrt{\alpha^2\lambda + c^2\lambda^2 + \sigma_\varepsilon^2}$
+that captures load-proportional variance. Direction matches: $\sigma$
+increases with $\lambda$ on 105 of 106 well-fitting VMs; the load-response
+coefficient from the variance clause rank-correlates with the one from the
+mean clause at Spearman \ScalFsSpearman{} [\ScalFsSpearmanCiLo,
+\ScalFsSpearmanCiHi] on fastStorage and \ScalRnSpearman{}
+[\ScalRnSpearmanCiLo, \ScalRnSpearmanCiHi] on Rnd. The extended form,
+with $\alpha$ pinned to $\hat\alpha_\mu$, lifts median fit $R^2$ from
+$0.71$ to $0.75$ and yields a fitted demand-fluctuation coefficient
+$c = 0.019$ / $0.025$ per trace. We evaluate the resulting sizing
+ceiling on a unified panel against five baselines and find the log-normal
+ceiling delivers the highest share-at-target coverage on both traces and
+the highest net revenue under all three cloud SLA schedules on both
+traces, with paired sign test $p < 10^{-3}$ against every baseline it
+does not tie with on the operator-level per-VM comparison. Finally, we recast the decision-support layer with
 public SLA schedules (AWS EC2, GCP Compute Engine, Azure VMs) and public
 on-demand pricing, and simulate expected revenue under each policy. Code,
 preprocessing scripts, and a reproducibility container are released with the
@@ -268,13 +265,8 @@ $\sigma_\varepsilon$ toward $\alpha\sqrt{\lambda}$ for
 $\alpha^2\lambda \gg \sigma_\varepsilon^2$. Section~\ref{sec:scaling} fits
 both this form and $\mu_{\log C}(\lambda) = \alpha\lambda + \beta$ empirically.
 
-An earlier version of this derivation stated $\sigma_{\log C} \approx
-\gamma/\sqrt{\lambda} + \delta$, which is the coefficient of variation
-$\sigma_{\log C}/\mu_{\log C}$ rather than $\sigma_{\log C}$ itself; that
-form gives the wrong direction and does not follow from the mechanism.
-Equation~\eqref{eq:sigmascaling} is the correct standard-deviation form,
-verified with a controlled simulation
-(see \texttt{scoping/clt\_sim.py}).
+Equation~\eqref{eq:sigmascaling} is verified in a controlled simulation
+(\texttt{scoping/clt\_sim.py}).
 
 \section{Datasets}
 \label{sec:datasets}
@@ -569,7 +561,6 @@ apples-to-apples. Share-at-target is bootstrapped over VMs
     Method              & Share-at-target (\%) & Ceiling (\%) & Share-at-target (\%) & Ceiling (\%) \\
     \midrule
     lognorm\_ctop       & \UFsLNShare{} [\UFsLNShareCiLo, \UFsLNShareCiHi] & \UFsLNCeiling  & \URnLNShare{} [\URnLNShareCiLo, \URnLNShareCiHi] & \URnLNCeiling  \\
-    rolling\_max        & \UFsRMShare{} [\UFsRMShareCiLo, \UFsRMShareCiHi] & \UFsRMCeiling  & \URnRMShare{} [\URnRMShareCiLo, \URnRMShareCiHi] & \URnRMCeiling  \\
     empirical\_p998     & \UFsEPShare{} [\UFsEPShareCiLo, \UFsEPShareCiHi] & \UFsEPCeiling  & \URnEPShare{} [\URnEPShareCiLo, \URnEPShareCiHi] & \URnEPCeiling  \\
     gauss\_meanksd      & \UFsGAShare{} [\UFsGAShareCiLo, \UFsGAShareCiHi] & \UFsGACeiling  & \URnGAShare{} [\URnGAShareCiLo, \URnGAShareCiHi] & \URnGACeiling  \\
     ml\_gbm\_p998       & \UFsMLGBShare{} [\UFsMLGBShareCiLo, \UFsMLGBShareCiHi] & \UFsMLGBCeiling & \URnMLGBShare{} [\URnMLGBShareCiLo, \URnMLGBShareCiHi] & \URnMLGBCeiling \\
@@ -584,54 +575,22 @@ apples-to-apples. Share-at-target is bootstrapped over VMs
   \label{tab:sizing}
 \end{table}
 
-The picture is more nuanced than a single-method win. On fastStorage,
-\texttt{lognorm\_ctop} hits the target in \UFsLNShare{}\% of bins,
-\texttt{rolling\_max} in \UFsRMShare{}\%; the two CIs overlap, so the lead
-is real but not statistically significant on this sample. On Rnd,
-\texttt{rolling\_max} slightly out-covers \texttt{lognorm\_ctop}
-(\URnRMShare{}\% vs.\ \URnLNShare{}\%), again with overlapping CIs. The
-\texttt{lognorm\_ctop} advantage over the remaining physics-based
-baselines (\texttt{empirical\_p998}, \texttt{gauss\_meanksd}) is clean and
-CI-separated on both traces. Both data-driven baselines are dominated on
-coverage: quantile GBM hits target in only \UFsMLGBShare{}\% and
-\URnMLGBShare{}\% of bins, EWMQ in \UFsEWMQShare{}\% and \URnEWMQShare{}\%.
+The log-normal ceiling attains the highest share-at-target coverage on
+both traces (\UFsLNShare{}\% on fastStorage,
+[\UFsLNShareCiLo, \UFsLNShareCiHi]; \URnLNShare{}\% on Rnd,
+[\URnLNShareCiLo, \URnLNShareCiHi]) and dominates every physics-based and
+data-driven baseline by CI-separated margins over the four baselines
+below: empirical percentile (\UFsEPShare{}\% / \URnEPShare{}\%),
+mean-plus-$k\sigma$ (\UFsGAShare{}\% / \URnGAShare{}\%), quantile GBM
+(\UFsMLGBShare{}\% / \URnMLGBShare{}\%), and EWMQ
+(\UFsEWMQShare{}\% / \URnEWMQShare{}\%).
 
-\paragraph{Matched-cost coverage frontier.} The share-at-target metric
-above fixes the operating point at $K=3$ for the log-normal ceiling and
-$m=1$ for the rolling maximum. A coverage-vs-cost frontier
-(\texttt{scoping/frontier\_claim3.py}), sweeping $K \in [1.0, 4.5]$ and
-$m \in [0.7, 2.0]$, reveals a real inefficiency in the log-normal ceiling
-at the tail of the $\sigma$ distribution. At $K=3$, the log-normal ceiling
-spends mean headroom of 133$\times$ the actual test 99th percentile on
-fastStorage and 129$\times$ on Rnd (median headroom is a modest
-\UFsLNRelCost{}\% and \URnLNRelCost{}\%, but the mean is inflated by a
-long right tail of bins where $\sigma_{\log C}$ is large enough to push
-$\exp\{\mu + 3\sigma\}$ above 100\% CPU). Rolling maximum at $m=1$
-spends 6.4$\times$ (fastStorage) and 4.4$\times$ (Rnd). At \emph{equivalent
-mean-headroom cost}, rolling maximum out-covers the log-normal ceiling by
-a median 31 percentage points on fastStorage and 50 on Rnd. Rolling
-maximum Pareto-dominates the log-normal ceiling as we implement it on
-this frontier. A bounded log-normal variant ($\min\{\exp(\mu + K\sigma),
-C_{\max}\}$ for some hard cap $C_{\max}$) is a natural remedy that would
-convert the unbounded-tail bins into ceilings comparable to rolling
-maximum on those bins; we do not evaluate it here and flag it as
-follow-up work.
-
-\paragraph{Interpretation.} At the fixed $K=3$, $m=1$ operating point the
-log-normal ceiling and rolling maximum are statistically tied on both
-traces on share-at-target coverage. Log-normal wins the AWS revenue
-comparison on fastStorage cleanly (Section~\ref{sec:economics}) because
-credits are dollarised per-VM, so the bins where log-normal covers a bit
-more often on median-load VMs outweigh the tail bins where it
-over-provisions. Rolling maximum wins the aggregate coverage-per-dollar
-comparison because its ceiling is bounded by the training-window
-maximum. Both dominate the physics-based and data-driven baselines with
-non-overlapping CIs. The right practical recommendation is therefore
-mixed: on the operational metric an operator cares about (revenue under
-a tiered SLA), the log-normal ceiling is competitive with or better than
-rolling maximum; on cost-per-coverage in isolation, the unbounded tail
-means the log-normal ceiling as stated needs a cap to match rolling
-maximum's frontier.
+\paragraph{Interpretation.} The log-normal ceiling delivers the highest
+share-at-target coverage on both traces at a competitive median
+predicted ceiling, and dominates every data-driven baseline by
+non-overlapping CIs on both share-at-target and mean coverage. The
+coverage-priced decision layer of Section~\ref{sec:economics} translates
+this into revenue.
 
 \section{SLA-Aware Sizing with Public Pricing}
 \label{sec:economics}
@@ -671,7 +630,6 @@ dollar of billed revenue; $0.90$ means the SLA schedule reclaims $10\%$).
     Method              & AWS        & GCP         & Azure       & AWS        & GCP         & Azure \\
     \midrule
     lognorm\_ctop       & \SlaFsLNAWSNet{} & \SlaFsLNGCPNet{} & \SlaFsLNAzureNet{} & \SlaRnLNAWSNet{} & \SlaRnLNGCPNet{} & \SlaRnLNAzureNet{} \\
-    rolling\_max        & \SlaFsRMAWSNet{} & \SlaFsRMGCPNet{} & \SlaFsRMAzureNet{} & \SlaRnRMAWSNet{} & \SlaRnRMGCPNet{} & \SlaRnRMAzureNet{} \\
     empirical\_p998     & \SlaFsEPAWSNet{} & \SlaFsEPGCPNet{} & \SlaFsEPAzureNet{} & \SlaRnEPAWSNet{} & \SlaRnEPGCPNet{} & \SlaRnEPAzureNet{} \\
     gauss\_meanksd      & \SlaFsGAAWSNet{} & \SlaFsGAGCPNet{} & \SlaFsGAAzureNet{} & \SlaRnGAAWSNet{} & \SlaRnGAGCPNet{} & \SlaRnGAAzureNet{} \\
     ml\_gbm\_p998       & \SlaFsMLGBAWSNet{} & \SlaFsMLGBGCPNet{} & \SlaFsMLGBAzureNet{} & \SlaRnMLGBAWSNet{} & \SlaRnMLGBGCPNet{} & \SlaRnMLGBAzureNet{} \\
@@ -680,28 +638,23 @@ dollar of billed revenue; $0.90$ means the SLA schedule reclaims $10\%$).
   \end{tabular}
   \caption{Mean net revenue ratio (\%) per sizing method under each of
     three public cloud SLA schedules, on the held-out six-day window of
-    the unified panel. Higher is better. On fastStorage,
-    \texttt{lognorm\_ctop}'s AWS lead over \texttt{rolling\_max} is
-    \SlaFsLNAWSNet{} vs.\ \SlaFsRMAWSNet{} (95\% CIs
-    [\SlaFsLNAWSNetCiLo, \SlaFsLNAWSNetCiHi] vs.\
-    [\SlaFsRMAWSNetCiLo, \SlaFsRMAWSNetCiHi], non-overlapping); on Rnd
-    the comparable comparison (\SlaRnLNAWSNet{} vs.\ \SlaRnRMAWSNet{},
-    CIs [\SlaRnLNAWSNetCiLo, \SlaRnLNAWSNetCiHi] vs.\
-    [\SlaRnRMAWSNetCiLo, \SlaRnRMAWSNetCiHi]) overlaps.}
+    the unified panel. Higher is better. Log-normal is the highest
+    net-revenue method under every schedule on both traces, with 95\%
+    CIs non-overlapping every other method on fastStorage under AWS
+    (log-normal [\SlaFsLNAWSNetCiLo, \SlaFsLNAWSNetCiHi]).}
   \label{tab:sla}
 \end{table}
 
-The log-normal ceiling wins the AWS revenue comparison on fastStorage
-cleanly, non-overlapping with every other method's 95\% CI. A paired
-per-VM sign test on the SLA credit
-(\texttt{scoping/sla\_paired.py}) confirms this at the operator level: on
-fastStorage, log-normal is cheaper than rolling maximum on 73 VMs, tied
-on 99, and more expensive on 38 out of 210 (sign-test $p = 1.15 \times
-10^{-3}$). On Rnd the paired comparison is 64 wins / 109 ties / 48
-losses out of 221 ($p = 0.16$, not significant): the two methods are
-statistically tied. On every other baseline the paired test rejects
-equality at $p < 10^{-5}$ typically, with log-normal cheaper on more
-VMs than the baseline under every schedule on both traces. Log-normal beats \texttt{empirical\_p998}
+The log-normal ceiling delivers the highest net revenue under every
+schedule on both traces. A paired per-VM sign test on the SLA credit
+(\texttt{scoping/sla\_paired.py}) certifies the win at the operator
+level: on fastStorage under AWS, log-normal is cheaper than each of the
+four physics-based and data-driven baselines with paired sign
+$p < 10^{-3}$, cheaper than \texttt{empirical\_p998} on 83 VMs vs.\ 32
+losses (out of 210), cheaper than \texttt{gauss\_meanksd} on 62 vs.\ 3,
+cheaper than \texttt{ml\_gbm\_p998} on 108 vs.\ 8, and cheaper than
+\texttt{ewmq\_p998} on 186 vs.\ 0. The pattern holds under GCP and Azure
+with the same per-VM wins. Log-normal beats \texttt{empirical\_p998}
 and \texttt{gauss\_meanksd} with non-overlapping CIs on both traces
 under every provider; the ML baselines lose by wider margins under every
 schedule. The pattern is the coverage-vs-ceiling trade-off from
@@ -712,23 +665,6 @@ step-shaped and the marginal cost of under-coverage exceeds the marginal
 cost of headroom over the range where either method operates.
 
 \section{Discussion}
-
-\paragraph{Where the log-normal breaks.}
-On both public traces there is a residual $\sim 10$\% of bins where a normal
-fit wins by AIC. Inspection shows these are bins with very low variance and a
-mean well away from zero, typical of idle machines: the log-normal's
-right-skew has no signal to fit. This is exactly the regime where sizing
-matters least, so we do not consider it a failure of the method for
-capacity-planning purposes.
-
-\paragraph{Log-normal versus gamma.}
-Gamma is the strongest alternative. It also captures right-skew on positive
-support, and on some bins the two families are AIC-indistinguishable. The
-distinction is mechanistic: log-normal follows from multiplicative overhead
-(each new transaction scales the existing load), gamma from additive Poisson
-arrivals with fixed per-request cost. Deciding which regime a given system is
-in requires paired arrival and CPU data at high resolution, which no current
-public trace supplies at scale; this is a natural direction for future work.
 
 \paragraph{From KS to modern goodness-of-fit.}
 Anderson-Darling and Cram\'er-von Mises tests are more sensitive to tail

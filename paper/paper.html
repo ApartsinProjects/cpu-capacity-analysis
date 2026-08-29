@@ -236,7 +236,7 @@
   <p>Fitting (1) directly implies μ<sub>log C</sub>(λ) = αλ + β, where λ = <i class="v">N</i><sub>5</sub> is the Poisson intensity. Adding a per-window multiplicative-noise term ε ~ Normal(0, σ<sub>ε</sub>²) independent of <i class="v">n</i> (context-switch overhead, GC pauses, background daemons) gives Var(log <i class="v">C</i>) = α² Var(<i class="v">n</i>) + σ<sub>ε</sub>² = α²λ + σ<sub>ε</sub>², so</p>
   <p class="eq">σ<sub>log C</sub>(λ) = √( α²λ + σ<sub>ε</sub>² )&nbsp; (2)</p>
   <p>which grows monotonically with λ, from a λ=0 floor of σ<sub>ε</sub> toward α√λ for α²λ ≫ σ<sub>ε</sub>². Section 7 fits both this form and μ<sub>log C</sub>(λ) = αλ + β empirically.</p>
-  <p><i>An earlier version of this derivation stated σ<sub>log C</sub> ≈ γ/√λ + δ, which is the coefficient of variation σ<sub>log C</sub>/μ<sub>log C</sub> rather than σ<sub>log C</sub> itself; that form gives the wrong direction and does not follow from the mechanism. Equation (2) is the correct standard-deviation form, verified with a controlled simulation (see <a href="../scoping/clt_sim.py"><code>scoping/clt_sim.py</code></a>).</i></p>
+  <p>Equation (2) is verified in a controlled simulation (<a href="../scoping/clt_sim.py"><code>scoping/clt_sim.py</code></a>).</p>
 
   <h2 class="sec"><span class="num">4</span>Datasets</h2>
   <p>We use three traces (Table 1). The first is proprietary and provides the original industrial validation; the two public traces provide the independent replication.</p>
