@@ -1,0 +1,20 @@
+{
+  "fastStorage": {
+    "n_vms": 152,
+    "median_rho_net": 0.4803979104914722,
+    "median_rho_disk_read": 0.13377309426394274,
+    "median_rho_disk_write": 0.3042649569361108,
+    "median_rho_mem_delta": 0.12434607690128414,
+    "median_rho_composite_all": 0.35124151170042067,
+    "median_rho_composite_net_disk": 0.45088299198412884
+  },
+  "rnd": {
+    "n_vms": 160,
+    "median_rho_net": 0.4180222573894769,
+    "median_rho_disk_read": 0.10112737652154796,
+    "median_rho_disk_write": 0.348781292383068,
+    "median_rho_mem_delta": 0.11458680813742908,
+    "median_rho_composite_all": 0.3317893379455894,
+    "median_rho_composite_net_disk": 0.42961588162361064
+  }
+}

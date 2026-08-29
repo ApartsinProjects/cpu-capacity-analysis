@@ -279,6 +279,21 @@ both this form and $\mu_{\log C}(\lambda) = \alpha\lambda + \beta$ empirically.
 Equation~\eqref{eq:sigmascaling} is verified in a controlled simulation
 (\texttt{scoping/clt\_sim.py}).
 
+\paragraph{On the Poisson assumption.} The derivation above takes $n$
+Poisson at intensity $\lambda$. Real production traffic often deviates
+from Poisson through batching (sessions, retry storms, scatter-gather
+requests), serial correlation across adjacent windows, or a slowly
+drifting arrival rate. Under compound (batched) Poisson with batch
+size $B$, the dispersion index becomes $\text{Var}(n)/\text{E}(n) =
+\text{E}(B^2)/\text{E}(B)$, and the standard-deviation form generalises
+to $\sigma_{\log C}(\lambda) = \sqrt{\alpha^2\lambda \cdot
+\text{E}(B^2)/\text{E}(B) + \sigma_\varepsilon^2}$. Section~\ref{sec:scaling}
+reports how the fitted $\hat\alpha$ from the variance clause compares to
+the fitted $\hat\alpha$ from the mean clause; a ratio significantly
+above one is a direct fingerprint of over-dispersion relative to the
+Poisson baseline, without requiring the paired arrival-count data to
+distinguish which of these three sources produced it.
+
 \section{Datasets}
 \label{sec:datasets}
 
@@ -484,6 +499,34 @@ correlation to $0.49$ (fastStorage) and $0.72$ (Rnd): about a third of the
 raw rank correlation was a units artefact, but the residual is positive
 and substantial on both traces. Median $\hat\alpha_\sigma / \hat\alpha_\mu$
 is $8.9$ [$6.9$, $14.1$] on fastStorage and $9.4$ [$6.3$, $14.3$] on Rnd.
+
+\paragraph{Direct dispersion measurement (Alibaba container arrivals).}
+On the Alibaba trace we also have paired container-arrival events per
+machine (\texttt{container\_meta.csv}). We measure the empirical
+dispersion index $\text{Var}(n)/\text{E}(n)$ of container arrivals per
+machine per fixed time window
+(\texttt{scoping/alibaba\_fano.py}). On the sub-population of machines
+with a meaningful arrival rate ($\geq 2$ containers per bin) at a
+5-minute window, the median dispersion index is $5.7$; at a 1-hour
+window it is $4.2$. Both are significantly above the Poisson baseline
+of $1.0$ and imply an $\hat\alpha_\sigma / \hat\alpha_\mu$ contribution
+of order $\sqrt{5.7} \approx 2.4$ from batching alone. Batched arrivals
+therefore contribute to the observed $\sim 9\times$ ratio but do not
+fully explain it on their own; a residual factor of $\sim 3\text{-}4$
+remains, consistent with additional load-proportional demand
+fluctuation, serial correlation across windows, or per-transaction
+cost heterogeneity, which the Form~C fit absorbs phenomenologically
+into its $c^2\lambda^2$ term.
+
+\paragraph{Load-proxy sensitivity on Bitbrains.} We evaluated a
+composite load-index proxy (z-scored sum of network, disk read, disk
+write, and memory-delta) against the single-signal network proxy used
+above (\texttt{scoping/composite\_proxy.py}). Median Spearman(proxy,
+CPU) per VM is $0.48$ for network alone versus $0.35$ for the
+four-signal composite on fastStorage, and $0.42$ versus $0.33$ on Rnd:
+the composite is diluted by the weaker signals rather than sharpened.
+The network throughput as used above is already the highest-Spearman
+single-signal proxy in the trace.
 
 \paragraph{Form C: an explicit demand-fluctuation fit.} The attribution of
 the excess to load-proportional demand fluctuation predicts a specific
@@ -746,12 +789,23 @@ accepted at some level in the tail" per bin.
 
 \section{Reproducibility}
 \label{sec:reproducibility}
-The complete pipeline, including the two public-trace downloads, the fit
-script, the scoring, and the tables in this paper, runs from a released
-Docker image in under 15 minutes on a laptop. Code and data manifests are on
-GitHub at \url{https://github.com/ApartsinProjects/cpu-capacity-analysis}
-(scoping run in \texttt{scoping/}, paper build in \texttt{paper/}), archived
-on Zenodo with a DOI.
+The complete pipeline, including trace retrieval instructions, the fit
+scripts, the scoring, and every table and figure in this paper, is
+released as a Zenodo reproducibility artifact
+(\textbf{DOI: 10.5281/zenodo.22156782}; concept DOI 10.5281/zenodo.22156781
+for the always-latest link). The living repository is on GitHub at
+\url{https://github.com/ApartsinProjects/cpu-capacity-analysis} (scoping
+scripts in \texttt{scoping/}, paper build in \texttt{paper/}). The three
+source traces (Bitbrains fastStorage, Bitbrains Rnd, Alibaba
+cluster-trace-v2018) are not rehosted; retrieval instructions and
+canonical URLs are in the deposit's \texttt{EXTERNAL\_DATA.md}. After
+downloading the traces and setting the trace paths at the top of the
+scoping scripts, running \texttt{fit.py}, \texttt{fit\_rnd.py},
+\texttt{fit\_alibaba.py}, \texttt{unified\_eval.py},
+\texttt{bootstrap\_cis.py}, and \texttt{build\_ci\_macros\_v2.py}
+regenerates \texttt{paper/paper\_macros.tex}, and a single
+\texttt{pdflatex} pass rebuilds every number in this manuscript from
+the raw traces.
 
 \section*{Acknowledgements}
 
