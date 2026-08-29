@@ -49,42 +49,30 @@
 \begin{abstract}
 Sizing servers for a transaction-processing service is a costly trade-off:
 over-provisioning wastes infrastructure budget, under-provisioning drops
-transactions and triggers SLA penalties. Sound sizing therefore rests on one
-quantity, stated precisely: given a transaction rate, what is the probability
-that CPU utilization stays below the level at which service-level objectives
-are met? We revisit a probabilistic answer proposed in an industry study from
-2011, in which CPU utilization at a fixed load was modelled as
-log-normal and combined with a Poisson event-arrival model to produce a
-capacity ceiling and, via an empirical service-success curve and a tiered
+transactions and triggers SLA penalties. Sound sizing rests on one
+quantity: given a transaction rate, the probability that CPU utilization
+stays below the level at which service-level objectives are met. We
+revisit a probabilistic answer proposed in a 2011 industry study, which
+modelled CPU utilization at fixed load as log-normal and combined it with
+Poisson event arrivals to produce a capacity ceiling and, under a tiered
 SLA schedule, an expected-revenue estimate. We reproduce the log-normal
-claim on two independent public traces (Bitbrains GWA-T-12 fastStorage, 1\,250
-VMs; Bitbrains Rnd, roughly 500 VMs) totalling \NBinsAll{} hour-of-day
-distribution bins, and find that log-normal is the best-fitting family among
+claim on two independent public traces (Bitbrains GWA-T-12 fastStorage,
+1\,250 VMs; Bitbrains Rnd, 500 VMs) totalling \NBinsAll{} hour-of-day
+distribution bins: log-normal is the best-fitting family among
 \{normal, gamma, Weibull, log-normal\} by AIC in \LogNormShareAll{}\% of
 bins (95\% cluster-bootstrap CI [\LogNormShareAllCiLo, \LogNormShareAllCiHi]).
 We derive the parameter-scaling law implied by the multiplicative-overhead
-argument, $\sigma_{\log C}(\lambda) = \sqrt{\alpha^2\lambda + \sigma_\varepsilon^2}$,
-and fit it per VM alongside a demand-fluctuation extension
-$\sigma_{\log C}(\lambda) = \sqrt{\alpha^2\lambda + c^2\lambda^2 + \sigma_\varepsilon^2}$
-that captures load-proportional variance. Direction matches: $\sigma$
-increases with $\lambda$ on 105 of the 106 VMs in the well-fitting
-well-proxied cohort (defined in Section~\ref{sec:scaling}); the load-response
-coefficient from the variance clause rank-correlates with the one from the
-mean clause at Spearman \ScalFsSpearman{} [\ScalFsSpearmanCiLo,
-\ScalFsSpearmanCiHi] on fastStorage and \ScalRnSpearman{}
-[\ScalRnSpearmanCiLo, \ScalRnSpearmanCiHi] on Rnd. The extended form,
-with $\alpha$ pinned to $\hat\alpha_\mu$, lifts median fit $R^2$ from
-$0.71$ to $0.75$ and yields a fitted demand-fluctuation coefficient
-$c = 0.019$ / $0.025$ per trace. We evaluate the resulting sizing
-ceiling on a unified panel against four baselines and find the log-normal
-ceiling delivers the highest share-at-target coverage on both traces and
-the highest net revenue under all three cloud SLA schedules on both
-traces, with paired sign test $p < 10^{-3}$ against every baseline it
-does not tie with on the operator-level per-VM comparison. Finally, we recast the decision-support layer with
-public SLA schedules (AWS EC2, GCP Compute Engine, Azure VMs) and public
-on-demand pricing, and simulate expected revenue under each policy. Code,
-preprocessing scripts, and a reproducibility container are released with the
-paper.
+mechanism, $\sigma_{\log C}(\lambda) = \sqrt{\alpha^2\lambda + \sigma_\varepsilon^2}$,
+fit it per VM, and extend it with a load-proportional demand-fluctuation
+term that lifts median fit $R^2$ from $0.71$ to $0.75$; $\sigma$
+increases with $\lambda$ on 105 of 106 VMs in the well-fitting
+well-proxied cohort. On a unified evaluation panel against four
+practitioner baselines, the log-normal ceiling delivers the highest
+share-at-target coverage on both traces and the highest net revenue
+under the public AWS EC2, GCP Compute Engine, and Azure VM SLA
+schedules, with paired sign test $p < 10^{-3}$ against every baseline
+it does not tie with. Code, preprocessing scripts, and a
+reproducibility container are released with the paper.
 \end{abstract}
 
 \section{Introduction}
@@ -107,9 +95,9 @@ integrates to $\log C = \alpha n + \beta$. The log-normal shape combined
 with a Poisson-arrival model for $N$ yields a distribution over $C$ at
 any given rate, and a one-parameter operational ceiling
 $\Ctop = \exp\{\mu_{\log C} + k\sigma_{\log C}\}$ that covers CPU with a
-tunable target confidence. We fit this per host from ordinary CPU-
-utilization telemetry, evaluate it against standard sizing baselines on
-public production traces, and translate the coverage guarantee into
+tunable target confidence. We fit this per host from ordinary
+CPU-utilization telemetry, evaluate it against standard sizing baselines
+on public production traces, and translate the coverage guarantee into
 expected revenue under a tiered SLA schedule.
 
 \paragraph{Why sizing accuracy is a dollar problem.} Sizing decisions are
@@ -128,7 +116,7 @@ less headroom on average. A physically-motivated one-parameter ceiling
 that maximises share-at-target coverage is therefore a load-bearing
 operational component, not a stylistic choice. The trade-off it makes,
 namely spending headroom in the tails to buy coverage, is quantified
-against five practitioner baselines in Section~\ref{sec:sizing}.
+against four practitioner baselines in Section~\ref{sec:sizing}.
 
 \paragraph{Who this is for.} Capacity planners running managed
 transaction-processing services (billing platforms, ad servers, checkout
@@ -138,8 +126,9 @@ the fit is per-host and re-learned monthly from ordinary CPU-utilization
 telemetry, the resulting $\Ctop$ is a single number per host per
 hour-of-day bin, and the decision layer in Section~\ref{sec:economics}
 turns it into an expected-revenue estimate under whichever tiered
-contract the operator holds. Section~\ref{sec:reproducibility} ships the
-whole pipeline as a two-file reference implementation.
+contract the operator holds. Section~\ref{sec:reproducibility} describes
+the released pipeline that reproduces every result table from the raw
+public traces.
 
 \subsection*{Contributions}
 
@@ -151,7 +140,7 @@ whole pipeline as a two-file reference implementation.
         gamma, and Weibull alternatives using AIC and one-sample KS. Log-normal
         is the best-fitting family in \LogNormShareAll{}\% of bins overall.
   \item \textbf{Parameter-scaling law from first principles.} We derive
-        $\mu(\lambda) = \alpha\lambda + \beta$ and the corrected
+        $\mu(\lambda) = \alpha\lambda + \beta$ and the
         standard-deviation form
         $\sigma(\lambda) = \sqrt{\alpha^2\lambda + \sigma_\varepsilon^2}$
         from the multiplicative-overhead mechanism plus the Poisson-arrival
@@ -164,7 +153,7 @@ whole pipeline as a two-file reference implementation.
         demand fluctuation.
   \item \textbf{Sizing accuracy versus practitioner baselines.} We evaluate
         the log-normal ceiling
-        $\Ctop = \exp\{\mu_{\log C} + k\sigma_{\log C}\}$ against five
+        $\Ctop = \exp\{\mu_{\log C} + k\sigma_{\log C}\}$ against four
         baselines on held-out data: empirical 99.8th percentile,
         mean-plus-$k\sigma$, quantile gradient boosting, and exponentially
         weighted moving quantile. We report share-at-target
@@ -310,14 +299,14 @@ Workloads Archive at TU Delft (Table~\ref{tab:datasets}).
 
 For each VM, we group CPU-utilization readings by hour of day (24 bins per
 VM). We sample 300 VMs per trace (seed 42) from the 1,250 fastStorage
-and 500 Rnd VMs; the sample yields \NVmsFs{} and \NVmsRnd{} VMs after
-dropping files with malformed columns and \NBinsFs{} and \NBinsRnd{}
-retained hour-of-day bins with at least 60 samples. Every bin with at
-least 60 samples is retained. In each bin we fit four
-candidate two-parameter distributions using maximum likelihood: log-normal,
-normal, gamma (location fixed at zero), and Weibull (location fixed at zero).
-We score each fit with the Akaike Information Criterion (AIC) and a
-one-sample Kolmogorov--Smirnov statistic against the fitted CDF.
+and 500 Rnd VMs. After dropping files with malformed columns, the sample
+yields \NVmsFs{} and \NVmsRnd{} VMs; retaining every hour-of-day bin with
+at least 60 samples gives \NBinsFs{} and \NBinsRnd{} bins. In each bin we
+fit four candidate two-parameter distributions using maximum likelihood:
+log-normal, normal, gamma (location fixed at zero), and Weibull (location
+fixed at zero). We score each fit with the Akaike Information Criterion
+(AIC) and a one-sample Kolmogorov-Smirnov statistic against the fitted
+CDF.
 
 \subsection{Results}
 \label{sec:validation-results}
@@ -345,10 +334,10 @@ the best fit by AIC.
 
 Pairwise AIC deltas (Table~\ref{tab:pairwise}) show that log-normal beats each
 alternative on a majority of bins by a substantial margin. The KS test
-rejects every family at the 5\% level in most bins, which is expected KS
-behaviour with fitted parameters and hundreds to thousands of samples; all
-four families are rejected at similar rates, so KS is not discriminating on
-this data and AIC is the informative comparison.
+rejects every family at the 5\% level in most bins, the expected behaviour
+with fitted parameters and hundreds to thousands of samples per bin. All
+four families are rejected at similar rates, so KS does not discriminate
+on this data and AIC is the informative comparison.
 
 To probe tail fit, which is what matters for a sizing method, we also
 compute the tail-sensitive Anderson-Darling ($A^2$) and Cram\'er-von Mises
@@ -412,22 +401,21 @@ The per-bin fit yields, for every VM, a set of $(\lambda, \mu_{\log C},
 \sigma_{\log C})$ triples where $\lambda$ is the mean 5-second event count
 inferred from the readings and the load model. Bitbrains has no
 transaction-count column, so we use mean network-received throughput per
-bin as a load-index proxy for $\lambda$; the proxy quality is discussed
+bin as a load-index proxy for $\lambda$; the proxy quality is measured
 below. We fit the $\mu$ clause by ordinary least squares
 $\hat\mu(\lambda) = \hat\alpha\lambda + \hat\beta$, and the $\sigma$ clause
-under two functional forms: the (incorrect) form from an earlier draft of
-this paper $\hat\sigma(\lambda) = \hat\gamma/\sqrt{\lambda} + \hat\delta$
-and the correct mechanism-derived form from
-Equation~\eqref{eq:sigmascaling} $\hat\sigma(\lambda) = \sqrt{\hat\alpha^2
-\lambda + \hat\sigma_\varepsilon^2}$.
+under two functional forms: a decreasing reference form
+$\hat\sigma(\lambda) = \hat\gamma/\sqrt{\lambda} + \hat\delta$ (Form A)
+and the mechanism-derived form of Equation~\eqref{eq:sigmascaling},
+$\hat\sigma(\lambda) = \sqrt{\hat\alpha^2
+\lambda + \hat\sigma_\varepsilon^2}$ (Form B).
 
-On \ScalFsNVms{} fastStorage VMs and \ScalRnNVms{} Rnd VMs (minimum six
-hour-of-day bins per VM), the aggregate is a mixed picture that deserves
-splitting. Following the project convention of inspecting failing points
-before accepting an aggregate, we ran a diagnostic
-(\texttt{scoping/SCALING\_DIAGNOSIS.md}, and a deeper decomposition in
-\texttt{scoping/SIGMA\_ROOTCAUSE.md}) that separates the two clauses of
-the law and tests candidate mechanisms for the $\sigma$ shape directly.
+We fit both clauses on \ScalFsNVms{} fastStorage VMs and \ScalRnNVms{}
+Rnd VMs (minimum six hour-of-day bins per VM). Two diagnostics
+(\texttt{scoping/SCALING\_DIAGNOSIS.md} and
+\texttt{scoping/SIGMA\_ROOTCAUSE.md}) separate the two clauses of
+the law and test candidate mechanisms for the $\sigma$ shape directly;
+the findings below follow that split.
 
 \paragraph{The $\mu$ clause: directionally confirmed, proxy-limited $R^2$.}
 $\hat\alpha > 0$ on 85 to 90 percent of VMs. The low median $R^2_\mu$ hides
@@ -441,16 +429,13 @@ proxy quality and $R^2_\mu$ is $\approx 0.27$: better proxy, better $\mu$
 fit. Where the proxy carries signal and $\lambda$ varies within the day,
 the mean clause is linear with $R^2$ up to $0.98$.
 
-\paragraph{The $\sigma$ clause: increases with load, at both meaning and
-magnitude.} Observed $\sigma_{\log C}$ increases with $\lambda$ on 105 of
-106 VMs in the well-fitting well-proxied cohort. This is the correct
-direction under Equation~\eqref{eq:sigmascaling}: $\sigma$ grows with
-$\lambda$, from a $\lambda=0$ floor toward $\alpha\sqrt{\lambda}$. The
-earlier fit that reported $\hat\gamma < 0$ was inverting a decreasing form
-to fit an increasing curve; that sign flip is consistent between the
-paper's original (incorrect) derivation and the direction the fitted
-$\hat\gamma$ took. Under the correct standard-deviation form, the direction
-of the empirical $\sigma(\lambda)$ is what the mechanism predicts.
+\paragraph{The $\sigma$ clause: increases with load.} Observed
+$\sigma_{\log C}$ increases with $\lambda$ on 105 of
+106 VMs in the well-fitting well-proxied cohort. This is the direction
+Equation~\eqref{eq:sigmascaling} predicts: $\sigma$ grows with
+$\lambda$, from a $\lambda=0$ floor toward $\alpha\sqrt{\lambda}$.
+Form A, decreasing in $\lambda$, can only track this rising curve by
+fitting $\hat\gamma < 0$; Form B predicts the rise directly.
 
 The magnitude of the observed growth is nevertheless steeper than
 Equation~\eqref{eq:sigmascaling} alone predicts at Bitbrains's parameters.
@@ -468,9 +453,7 @@ peak p95 CPU is 4\%, only 14 of 106 VMs ever log a sample above 90\%);
 disk-I/O correlation with $\sigma$ is essentially zero.
 
 \paragraph{Per-VM mechanism consistency.} We refit the $\sigma$ clause per
-VM under both Form A (the paper's original, $\hat\gamma/\sqrt{\lambda} + \hat\delta$)
-and Form B (Equation~\ref{eq:sigmascaling}, $\sqrt{\hat\alpha_\sigma^2\lambda +
-\hat\sigma_\varepsilon^2}$), and compared the fitted $\hat\alpha_\sigma$
+VM under both Form A and Form B, and compared the fitted $\hat\alpha_\sigma$
 against $\hat\alpha_\mu$ from the mean clause on the same VM
 (\texttt{scoping/refit\_form\_ab.py}). Across the cohort where both fits are
 meaningful (\ScalFsCohortN{} fastStorage, \ScalRnCohortN{} Rnd VMs),
@@ -500,17 +483,14 @@ $\hat\alpha_\mu$ from the mean clause so no parameters are spent on
 $\alpha$ from the variance side, lifts median $R^2$ from $0.71$ (Form B)
 to $0.75$ (pinned Form C) and matches free Form C at $0.79$; pinned
 Form C is AICc-preferred on 37\% of VMs and free Form B on 55\%. Median
-$c$ under the pinned fit is $0.019$ / $0.025$, giving the demand-
-fluctuation coefficient in the load-proportional-variance term as a
-fitted number. The pure Poisson-arrival mechanism $\sigma = \sqrt{\alpha^2\lambda + \sigma_\varepsilon^2}$
-alone is quantitatively insufficient on this data at 5-minute sampling;
-Form C is a competitive extension in a substantial minority of VMs, and
-we present it as evidence that the load-proportional demand fluctuation
-identified in \texttt{scoping/SIGMA\_ROOTCAUSE.md} admits a fitted
-parametric form, not as a confirmation of the arrival-only mechanism.
-A direct test at sub-minute resolution with paired arrival and CPU data
-remains future work (\texttt{scoping/BORG\_PLAN.md}). Figure~\ref{fig:refit-ab} shows the per-VM fits for
-an exemplar and the paired $\hat\alpha$ scatter.
+$c$ under the pinned fit is $0.019$ / $0.025$, giving the
+demand-fluctuation coefficient in the load-proportional-variance term as
+a fitted number. Form C establishes that the load-proportional demand
+fluctuation identified in \texttt{scoping/SIGMA\_ROOTCAUSE.md} admits a
+fitted parametric form; separating it from the arrival-only mechanism
+requires paired arrival and CPU data at sub-minute resolution, planned
+in \texttt{scoping/BORG\_PLAN.md}. Figure~\ref{fig:refit-ab} shows the
+per-VM fits for an exemplar and the paired $\hat\alpha$ scatter.
 
 \begin{figure}[t]
   \centering
@@ -533,11 +513,9 @@ load-proportional fluctuation of demand itself (sub-hour burstiness plus
 day-to-day level shifts, in roughly a 2:1 ratio on this cohort), which is
 consistent with a mechanism in which $\lambda$ itself has a
 load-proportional variance component and not merely the arrival count at
-fixed $\lambda$. Testing the arrival-only mechanism against the
-demand-fluctuation extension in the same dataset requires paired arrival-
-rate and CPU data at sub-minute resolution on a single workload class,
-which no current public trace supplies at scale; a concrete plan for such
-a test on Google Borg data is written up in \texttt{scoping/BORG\_PLAN.md}.
+fixed $\lambda$. No current public trace supplies paired arrival-rate and
+CPU data at sub-minute resolution on a single workload class at scale,
+which is what the Borg plan referenced above targets.
 
 \section{Sizing Accuracy}
 \label{sec:sizing}
@@ -545,7 +523,7 @@ a test on Google Borg data is written up in \texttt{scoping/BORG\_PLAN.md}.
 We split each VM's CPU time series into a training set (all samples except
 the last six days) and a test set (last six days). For every
 (VM, hour-of-day) bin with at least 60 training and 12 test samples we fit
-four sizing methods on train and evaluate on test:
+five sizing methods on train and evaluate on test:
 \begin{itemize}
   \item \textbf{lognorm\_ctop}: $\Ctop = \exp\{\mu + 3\sigma\}$ from the
         log-normal fit on train.
@@ -567,13 +545,12 @@ sufficient-data filters. Cluster bootstrap over VMs uses $B = 2{,}000$
 resamples with seed 42. Metrics per bin: coverage rate (fraction of test
 samples at or below the predicted ceiling; target $\geq 99.8\%$), and
 predicted-ceiling level in CPU percent (lower is better once coverage is
-above target). Table~\ref{tab:sizing} reports the pooled results. The
-99.8\% threshold is chosen for consistency with the three-sigma coverage
-of a normal distribution (exact one-sided coverage $0.99865$; we report as
-$0.998$ throughout for readability).
+above target). The 99.8\% threshold is chosen for consistency with the
+three-sigma coverage of a normal distribution (exact one-sided coverage
+$0.99865$; we report as $0.998$ throughout for readability).
 
 Table~\ref{tab:sizing} reports pooled results across a unified panel:
-one script, one VM sample per trace, one bin filter, all six ceilings
+one script, one VM sample per trace, one bin filter, with every method
 co-computed per bin (\PanelFsNVms{} / \PanelRnNVms{} VMs;
 \PanelFsNBins{} / \PanelRnNBins{} bins). Every row is scored on the same
 bins with identical train/test splits, so the comparisons are
@@ -613,17 +590,11 @@ Table~\ref{tab:sizing}, the log-normal lead is CI-separated
 mean-plus-$k\sigma$ (\UFsGAShare{}\% / \URnGAShare{}\%), quantile GBM
 (\UFsMLGBShare{}\% / \URnMLGBShare{}\%), and EWMQ
 (\UFsEWMQShare{}\% / \URnEWMQShare{}\%); against empirical percentile
-(\UFsEPShare{}\% / \URnEPShare{}\%) the interval-lead is clean on Rnd
-and narrowly overlapping on fastStorage. The revenue metric of
-Section~\ref{sec:economics} arbitrates the narrow-overlap case
-directly.
-
-\paragraph{Interpretation.} The log-normal ceiling delivers the
-highest share-at-target coverage on both traces at a competitive
-median predicted ceiling, and dominates the two data-driven baselines
-(quantile GBM and EWMQ) with non-overlapping CIs on both share-at-target
-and mean coverage. The coverage-priced decision layer of
-Section~\ref{sec:economics} translates this into revenue.
+(\UFsEPShare{}\% / \URnEPShare{}\%) the interval lead is clean on Rnd
+and narrowly overlapping on fastStorage. The log-normal ceiling reaches
+this coverage at a competitive median predicted ceiling. The revenue
+metric of Section~\ref{sec:economics} prices the coverage-vs-ceiling
+trade-off in dollars and arbitrates the narrow-overlap case directly.
 
 \section{SLA-Aware Sizing with Public Pricing}
 \label{sec:economics}
@@ -646,7 +617,7 @@ three public schedules:
         below 99.0\%, 100\% below 95.0\%~\cite{azurevmsla}.
 \end{itemize}
 
-We evaluate the four sizing methods from Section~\ref{sec:sizing} under
+We evaluate the five sizing methods from Section~\ref{sec:sizing} under
 each schedule. For every VM we compute a mean per-bin availability over
 the six-day test window and apply the schedule; we then average the
 resulting service-credit fractions across VMs. Table~\ref{tab:sla} reports
@@ -672,9 +643,12 @@ dollar of billed revenue; $0.90$ means the SLA schedule reclaims $10\%$).
   \caption{Mean net revenue ratio (\%) per sizing method under each of
     three public cloud SLA schedules, on the held-out six-day window of
     the unified panel. Higher is better. Log-normal is the highest
-    net-revenue method under every schedule on both traces, with 95\%
-    CIs non-overlapping every other method on fastStorage under AWS
-    (log-normal [\SlaFsLNAWSNetCiLo, \SlaFsLNAWSNetCiHi]).}
+    net-revenue method under every schedule on both traces. On
+    fastStorage under AWS, log-normal's 95\% CI
+    [\SlaFsLNAWSNetCiLo, \SlaFsLNAWSNetCiHi] is non-overlapping
+    with those of \texttt{empirical\_p998}, \texttt{ml\_gbm\_p998}, and
+    \texttt{ewmq\_p998}, and narrowly overlapping with
+    \texttt{gauss\_meanksd}.}
   \label{tab:sla}
 \end{table}
 
@@ -695,7 +669,7 @@ schedule on both traces under this stylized mapping. A paired per-VM
 sign test on the SLA credit
 (\texttt{scoping/sla\_paired.py}) certifies the win at the operator
 level: on fastStorage under AWS, log-normal is cheaper than each of the
-four physics-based and data-driven baselines with paired sign
+four baselines with paired sign
 $p < 10^{-3}$, cheaper than \texttt{empirical\_p998} on 83 VMs vs.\ 32
 losses (out of 210), cheaper than \texttt{gauss\_meanksd} on 62 vs.\ 3,
 cheaper than \texttt{ml\_gbm\_p998} on 108 vs.\ 8, and cheaper than
@@ -703,12 +677,12 @@ cheaper than \texttt{ml\_gbm\_p998} on 108 vs.\ 8, and cheaper than
 with the same per-VM wins. Log-normal beats \texttt{empirical\_p998}
 and \texttt{gauss\_meanksd} with non-overlapping CIs on both traces
 under every provider; the ML baselines lose by wider margins under every
-schedule. The pattern is the coverage-vs-ceiling trade-off from
-Section~\ref{sec:sizing} priced in dollars: methods that cover more
-often (\texttt{lognorm\_ctop}, \texttt{rolling\_max}) keep more revenue
-even when they carry a higher predicted ceiling, because SLA credits are
-step-shaped and the marginal cost of under-coverage exceeds the marginal
-cost of headroom over the range where either method operates.
+schedule. This is the coverage-vs-ceiling trade-off from
+Section~\ref{sec:sizing} priced in dollars: a method that covers more
+often keeps more revenue even when it carries a higher predicted
+ceiling, because SLA credits are step-shaped and the marginal cost of
+under-coverage exceeds the marginal cost of headroom over the range
+where these methods operate.
 
 \section{Discussion}
 
@@ -733,7 +707,7 @@ on Zenodo with a DOI.
 
 \section*{Acknowledgements}
 
-The traces used in Section~\ref{sec:validation} were graciously provided by
+The traces used in this paper were graciously provided by
 Bitbrains IT Services Inc.\ and released through the Grid Workloads Archive
 at TU Delft.
 
