@@ -75,7 +75,7 @@ mean clause at Spearman \ScalFsSpearman{} [\ScalFsSpearmanCiLo,
 with $\alpha$ pinned to $\hat\alpha_\mu$, lifts median fit $R^2$ from
 $0.71$ to $0.75$ and yields a fitted demand-fluctuation coefficient
 $c = 0.019$ / $0.025$ per trace. We evaluate the resulting sizing
-ceiling on a unified panel against five baselines and find the log-normal
+ceiling on a unified panel against four baselines and find the log-normal
 ceiling delivers the highest share-at-target coverage on both traces and
 the highest net revenue under all three cloud SLA schedules on both
 traces, with paired sign test $p < 10^{-3}$ against every baseline it
@@ -165,8 +165,8 @@ whole pipeline as a two-file reference implementation.
         the log-normal ceiling
         $\Ctop = \exp\{\mu_{\log C} + k\sigma_{\log C}\}$ against five
         baselines on held-out data: empirical 99.8th percentile,
-        mean-plus-$k\sigma$, rolling maximum, quantile gradient boosting,
-        and exponentially weighted moving quantile. We report share-at-target
+        mean-plus-$k\sigma$, quantile gradient boosting, and exponentially
+        weighted moving quantile. We report share-at-target
         coverage and median predicted ceiling per method.
   \item \textbf{SLA-aware sizing with public pricing.} We replace the
         proprietary contract in the original decision model with the
@@ -298,7 +298,11 @@ the independent replication.
 \subsection{Method}
 
 For each VM, we group CPU-utilization readings by hour of day (24 bins per
-VM). Every bin with at least 60 samples is retained. In each bin we fit four
+VM). We sample 300 VMs per trace (seed 42) from the 1,250 fastStorage
+and 500 Rnd VMs; the sample yields \NVmsFs{} and \NVmsRnd{} VMs after
+dropping files with malformed columns and \NBinsFs{} and \NBinsRnd{}
+retained hour-of-day bins with at least 60 samples. Every bin with at
+least 60 samples is retained. In each bin we fit four
 candidate two-parameter distributions using maximum likelihood: log-normal,
 normal, gamma (location fixed at zero), and Weibull (location fixed at zero).
 We score each fit with the Akaike Information Criterion (AIC) and a
@@ -579,19 +583,23 @@ apples-to-apples. Share-at-target is bootstrapped over VMs
 The log-normal ceiling attains the highest share-at-target coverage on
 both traces (\UFsLNShare{}\% on fastStorage,
 [\UFsLNShareCiLo, \UFsLNShareCiHi]; \URnLNShare{}\% on Rnd,
-[\URnLNShareCiLo, \URnLNShareCiHi]) and dominates every physics-based and
-data-driven baseline by CI-separated margins over the four baselines
-below: empirical percentile (\UFsEPShare{}\% / \URnEPShare{}\%),
+[\URnLNShareCiLo, \URnLNShareCiHi]). Against the four baselines in
+Table~\ref{tab:sizing}, the log-normal lead is CI-separated
+(non-overlapping 95\% cluster-bootstrap CIs) on both traces against
 mean-plus-$k\sigma$ (\UFsGAShare{}\% / \URnGAShare{}\%), quantile GBM
 (\UFsMLGBShare{}\% / \URnMLGBShare{}\%), and EWMQ
-(\UFsEWMQShare{}\% / \URnEWMQShare{}\%).
+(\UFsEWMQShare{}\% / \URnEWMQShare{}\%); against empirical percentile
+(\UFsEPShare{}\% / \URnEPShare{}\%) the interval-lead is clean on Rnd
+and narrowly overlapping on fastStorage. The revenue metric of
+Section~\ref{sec:economics} arbitrates the narrow-overlap case
+directly.
 
-\paragraph{Interpretation.} The log-normal ceiling delivers the highest
-share-at-target coverage on both traces at a competitive median
-predicted ceiling, and dominates every data-driven baseline by
-non-overlapping CIs on both share-at-target and mean coverage. The
-coverage-priced decision layer of Section~\ref{sec:economics} translates
-this into revenue.
+\paragraph{Interpretation.} The log-normal ceiling delivers the
+highest share-at-target coverage on both traces at a competitive
+median predicted ceiling, and dominates the two data-driven baselines
+(quantile GBM and EWMQ) with non-overlapping CIs on both share-at-target
+and mean coverage. The coverage-priced decision layer of
+Section~\ref{sec:economics} translates this into revenue.
 
 \section{SLA-Aware Sizing with Public Pricing}
 \label{sec:economics}
