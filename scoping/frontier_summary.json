@@ -1,0 +1,34 @@
+{
+  "fastStorage": {
+    "n_vms": 210,
+    "n_bins": 4908,
+    "ln_share_at_K3_from_frontier": 0.8231458842705787,
+    "rm_share_at_m1_from_frontier": 0.8209046454767727,
+    "ln_mean_headroom_at_K3": 133.4484981394911,
+    "rm_mean_headroom_at_m1": 6.353894497763268,
+    "bootstrap_pub_diff_ln_minus_rm": {
+      "point": 0.002241238793806031,
+      "ci_low": -0.02088250625966723,
+      "ci_hi": 0.025636889205768756
+    },
+    "matched_cost_median_share_diff": -0.30969845150774244,
+    "matched_cost_max_share_diff": 0.20863895680521594,
+    "matched_cost_min_share_diff": -0.3378158109209455
+  },
+  "rnd": {
+    "n_vms": 221,
+    "n_bins": 5173,
+    "ln_share_at_K3_from_frontier": 0.7316837425091823,
+    "rm_share_at_m1_from_frontier": 0.7568142277208583,
+    "ln_mean_headroom_at_K3": 129.05847690386943,
+    "rm_mean_headroom_at_m1": 4.441177066175164,
+    "bootstrap_pub_diff_ln_minus_rm": {
+      "point": -0.02513048521167601,
+      "ci_low": -0.05113935136579317,
+      "ci_hi": 0.0032266337748597103
+    },
+    "matched_cost_median_share_diff": -0.4958438043688382,
+    "matched_cost_max_share_diff": 0.03498936787164125,
+    "matched_cost_min_share_diff": -0.5267736323216703
+  }
+}

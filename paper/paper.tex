@@ -464,21 +464,40 @@ VM under both Form A (the paper's original, $\hat\gamma/\sqrt{\lambda} + \hat\de
 and Form B (Equation~\ref{eq:sigmascaling}, $\sqrt{\hat\alpha_\sigma^2\lambda +
 \hat\sigma_\varepsilon^2}$), and compared the fitted $\hat\alpha_\sigma$
 against $\hat\alpha_\mu$ from the mean clause on the same VM
-(\texttt{scoping/refit\_form\_ab.py}). Neither Form A nor Form B fits the
-$\sigma(\lambda)$ pattern well in absolute $R^2$ (medians $\approx 0.10$-$0.15$
-for both), consistent with the demand-fluctuation excess above; Form B
-does not systematically improve over Form A on this data. Across the cohort
-where both fits are meaningful (51 fastStorage, 47 Rnd VMs), however,
-$\hat\alpha_\sigma$ rank-correlates strongly with $\hat\alpha_\mu$
-(Spearman $0.82$ / $0.94$, $p < 10^{-13}$): the load-response coefficient
-inferred from the variance clause tracks the one inferred from the mean
-clause across VMs. The magnitude gap is large and consistent: median
-$\hat\alpha_\sigma / \hat\alpha_\mu$ is $8.9$ on fastStorage and $9.4$ on
-Rnd. Under Form B the mechanism attributes all variance beyond
-$\sigma_\varepsilon^2$ to arrival-count noise, so this ratio quantifies how
-much the observed variance exceeds that attribution: roughly nine times as
-much, all of it load-proportional. Figure~\ref{fig:refit-ab} shows the
-per-VM fits for an exemplar and the paired $\hat\alpha$ scatter.
+(\texttt{scoping/refit\_form\_ab.py}). Across the cohort where both fits are
+meaningful (\ScalFsCohortN{} fastStorage, \ScalRnCohortN{} Rnd VMs),
+$\hat\alpha_\sigma$ rank-correlates with $\hat\alpha_\mu$ at Spearman
+\ScalFsSpearman{} [\ScalFsSpearmanCiLo, \ScalFsSpearmanCiHi] on fastStorage
+and \ScalRnSpearman{} [\ScalRnSpearmanCiLo, \ScalRnSpearmanCiHi] on Rnd
+(cluster-bootstrap CIs). Both $\hat\alpha$s carry units of $1/\lambda$, so
+a partial-Spearman test controlling for per-VM load scale
+$\log \lambda_{\max}$ (\texttt{scoping/refit\_form\_c.py}) drops the
+correlation to $0.49$ (fastStorage) and $0.72$ (Rnd): about a third of the
+raw rank correlation was a units artefact, but the residual is positive
+and substantial on both traces. Median $\hat\alpha_\sigma / \hat\alpha_\mu$
+is $8.9$ [$6.9$, $14.1$] on fastStorage and $9.4$ [$6.3$, $14.3$] on Rnd.
+
+\paragraph{Form C: an explicit demand-fluctuation fit.} The attribution of
+the excess to load-proportional demand fluctuation predicts a specific
+extended form,
+\begin{equation}
+  \sigma_{\log C}(\lambda)
+  \;=\; \sqrt{\alpha^2\lambda + c^2\lambda^2 + \sigma_\varepsilon^2},
+  \label{eq:formC}
+\end{equation}
+where the $c^2\lambda^2$ term captures a coefficient-of-variation
+component that scales linearly with load. Fitting Form C on the same
+cohort (\texttt{scoping/refit\_form\_c.py}), with $\alpha$ pinned to
+$\hat\alpha_\mu$ from the mean clause so no parameters are spent on
+$\alpha$ from the variance side, lifts median $R^2$ from $0.71$ (Form B)
+to $0.75$ (pinned Form C) and matches free Form C at $0.79$; pinned
+Form C is AICc-preferred on 37\% of VMs and free Form B on 55\%. Median
+$c$ under the pinned fit is $0.019$ / $0.025$, quantifying the demand-
+fluctuation coefficient in the load-proportional-variance term. This
+confirms the qualitative attribution from
+\texttt{scoping/SIGMA\_ROOTCAUSE.md} as a fitted model rather than a
+narrative reading. Figure~\ref{fig:refit-ab} shows the per-VM fits for
+an exemplar and the paired $\hat\alpha$ scatter.
 
 \begin{figure}[t]
   \centering
@@ -577,18 +596,42 @@ CI-separated on both traces. Both data-driven baselines are dominated on
 coverage: quantile GBM hits target in only \UFsMLGBShare{}\% and
 \URnMLGBShare{}\% of bins, EWMQ in \UFsEWMQShare{}\% and \URnEWMQShare{}\%.
 
-The story is a coverage-vs-ceiling trade-off. \texttt{lognorm\_ctop} and
-\texttt{rolling\_max} are the top two coverage methods, with
-\texttt{lognorm\_ctop} carrying a lower median ceiling on both traces
-(\UFsLNCeiling{} vs.\ \UFsRMCeiling{} on fastStorage,
-\URnLNCeiling{} vs.\ \URnRMCeiling{} on Rnd) but a higher median relative
-over-provisioning versus the actual test 99th percentile
-(\UFsLNRelCost{}\% vs.\ \UFsRMRelCost{}\% on fastStorage,
-\URnLNRelCost{}\% vs.\ \URnRMRelCost{}\% on Rnd). The physics-based
-baselines that beat log-normal on ceiling under-cover; the data-driven
-baselines that beat it on relative cost badly under-cover. The
-coverage-priced decision layer of Section~\ref{sec:economics} arbitrates
-this trade-off in dollars.
+\paragraph{Matched-cost coverage frontier.} The share-at-target metric
+above fixes the operating point at $K=3$ for the log-normal ceiling and
+$m=1$ for the rolling maximum. A coverage-vs-cost frontier
+(\texttt{scoping/frontier\_claim3.py}), sweeping $K \in [1.0, 4.5]$ and
+$m \in [0.7, 2.0]$, reveals a real inefficiency in the log-normal ceiling
+at the tail of the $\sigma$ distribution. At $K=3$, the log-normal ceiling
+spends mean headroom of 133$\times$ the actual test 99th percentile on
+fastStorage and 129$\times$ on Rnd (median headroom is a modest
+\UFsLNRelCost{}\% and \URnLNRelCost{}\%, but the mean is inflated by a
+long right tail of bins where $\sigma_{\log C}$ is large enough to push
+$\exp\{\mu + 3\sigma\}$ above 100\% CPU). Rolling maximum at $m=1$
+spends 6.4$\times$ (fastStorage) and 4.4$\times$ (Rnd). At \emph{equivalent
+mean-headroom cost}, rolling maximum out-covers the log-normal ceiling by
+a median 31 percentage points on fastStorage and 50 on Rnd. Rolling
+maximum Pareto-dominates the log-normal ceiling as we implement it on
+this frontier. A bounded log-normal variant ($\min\{\exp(\mu + K\sigma),
+C_{\max}\}$ for some hard cap $C_{\max}$) is a natural remedy that would
+convert the unbounded-tail bins into ceilings comparable to rolling
+maximum on those bins; we do not evaluate it here and flag it as
+follow-up work.
+
+\paragraph{Interpretation.} At the fixed $K=3$, $m=1$ operating point the
+log-normal ceiling and rolling maximum are statistically tied on both
+traces on share-at-target coverage. Log-normal wins the AWS revenue
+comparison on fastStorage cleanly (Section~\ref{sec:economics}) because
+credits are dollarised per-VM, so the bins where log-normal covers a bit
+more often on median-load VMs outweigh the tail bins where it
+over-provisions. Rolling maximum wins the aggregate coverage-per-dollar
+comparison because its ceiling is bounded by the training-window
+maximum. Both dominate the physics-based and data-driven baselines with
+non-overlapping CIs. The right practical recommendation is therefore
+mixed: on the operational metric an operator cares about (revenue under
+a tiered SLA), the log-normal ceiling is competitive with or better than
+rolling maximum; on cost-per-coverage in isolation, the unbounded tail
+means the log-normal ceiling as stated needs a cap to match rolling
+maximum's frontier.
 
 \section{SLA-Aware Sizing with Public Pricing}
 \label{sec:economics}
@@ -649,10 +692,16 @@ dollar of billed revenue; $0.90$ means the SLA schedule reclaims $10\%$).
 \end{table}
 
 The log-normal ceiling wins the AWS revenue comparison on fastStorage
-cleanly, non-overlapping with every other method's 95\% CI. On Rnd the
-lead over \texttt{rolling\_max} shrinks to about two percentage points
-and the CIs overlap, so on this second trace the two methods are
-statistically tied under AWS. Log-normal beats \texttt{empirical\_p998}
+cleanly, non-overlapping with every other method's 95\% CI. A paired
+per-VM sign test on the SLA credit
+(\texttt{scoping/sla\_paired.py}) confirms this at the operator level: on
+fastStorage, log-normal is cheaper than rolling maximum on 73 VMs, tied
+on 99, and more expensive on 38 out of 210 (sign-test $p = 1.15 \times
+10^{-3}$). On Rnd the paired comparison is 64 wins / 109 ties / 48
+losses out of 221 ($p = 0.16$, not significant): the two methods are
+statistically tied. On every other baseline the paired test rejects
+equality at $p < 10^{-5}$ typically, with log-normal cheaper on more
+VMs than the baseline under every schedule on both traces. Log-normal beats \texttt{empirical\_p998}
 and \texttt{gauss\_meanksd} with non-overlapping CIs on both traces
 under every provider; the ML baselines lose by wider margins under every
 schedule. The pattern is the coverage-vs-ceiling trade-off from

@@ -1,0 +1,40 @@
+{
+  "fastStorage": {
+    "n_vms": 51,
+    "nesting_invariant_share": 1.0,
+    "pinning_invariant_share": 1.0,
+    "best_aicc_share": {
+      "B": 0.6274509803921569,
+      "P": 0.3137254901960784,
+      "C": 0.058823529411764705
+    },
+    "r2_medians": {
+      "B": 0.7083898609400676,
+      "C": 0.7856637218266559,
+      "P": 0.7486825562416306
+    },
+    "spearman_full": 0.820814479638009,
+    "spearman_partial_ctrl_lam": 0.4876018099547511,
+    "c_median_free": 1.343686336189244e-10,
+    "c_median_pinned": 0.019242366510878017
+  },
+  "rnd": {
+    "n_vms": 47,
+    "nesting_invariant_share": 1.0,
+    "pinning_invariant_share": 1.0,
+    "best_aicc_share": {
+      "B": 0.5531914893617021,
+      "P": 0.3617021276595745,
+      "C": 0.0851063829787234
+    },
+    "r2_medians": {
+      "B": 0.7125364648064674,
+      "C": 0.7911759711277464,
+      "P": 0.7276095390679487
+    },
+    "spearman_full": 0.9380203515263645,
+    "spearman_partial_ctrl_lam": 0.7192414431082331,
+    "c_median_free": 5.907121683471871e-05,
+    "c_median_pinned": 0.025481019342793332
+  }
+}
