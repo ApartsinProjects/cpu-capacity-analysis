@@ -494,7 +494,7 @@ per-VM fits for an exemplar and the paired $\hat\alpha$ scatter.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{fig_refit_ab.png}
+  \includegraphics[width=\linewidth]{fig_refit_ab.pdf}
   \caption{Left and centre: per-VM $\mu(\lambda)$ linear fit and
     $\sigma(\lambda)$ under Form A and Form B on an exemplar fastStorage
     VM. Right: per-VM $\hat\alpha$ from the $\sigma$ (Form B) fit vs.\
@@ -595,6 +595,21 @@ and narrowly overlapping on fastStorage. The log-normal ceiling reaches
 this coverage at a competitive median predicted ceiling. The revenue
 metric of Section~\ref{sec:economics} prices the coverage-vs-ceiling
 trade-off in dollars and arbitrates the narrow-overlap case directly.
+
+\paragraph{Metric sensitivity.} Share-at-target is a per-bin classifier
+that can saturate at small test-bin sizes, so we complement it with two
+checks (\texttt{scoping/metric\_sensitivity.py}). First, raising the
+minimum test-bin size from 12 to 30 samples preserves the log-normal
+lead over every one of the four baselines on both traces; the ranking
+against \texttt{empirical\_p998}, \texttt{gauss\_meanksd},
+\texttt{ml\_gbm\_p998}, and \texttt{ewmq\_p998} is stable. Second,
+median pinball loss at the $0.998$ quantile, a proper scoring rule that
+does not saturate at any $n$, places the log-normal ceiling at $0.0061$
+on both traces: best on Rnd (next closest baseline
+\texttt{empirical\_p998} at $0.0071$) and within $0.001$ of the field
+on fastStorage. On both metrics the ranking of log-normal against the
+four baselines in Table~\ref{tab:sizing} survives the sensitivity
+check.
 
 \section{SLA-Aware Sizing with Public Pricing}
 \label{sec:economics}

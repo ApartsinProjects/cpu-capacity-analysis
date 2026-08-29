@@ -1,0 +1,146 @@
+{
+  "sensitivity": {
+    "fastStorage": {
+      "min_n_12": {
+        "n_bins": 4908,
+        "lognorm_ctop": 0.8231458842705787,
+        "empirical_p998": 0.7793398533007335,
+        "gauss_meanksd": 0.7524449877750611,
+        "rolling_max": 0.8209046454767727,
+        "ml_gbm_p998": 0.5977948226270374,
+        "ewmq_p998": 0.2279951100244499
+      },
+      "min_n_30": {
+        "n_bins": 4377,
+        "lognorm_ctop": 0.8026045236463331,
+        "empirical_p998": 0.7735892163582362,
+        "gauss_meanksd": 0.7288096870002284,
+        "rolling_max": 0.8149417409184373,
+        "ml_gbm_p998": 0.5972290945076695,
+        "ewmq_p998": 0.2051633538953621
+      },
+      "min_n_60": {
+        "n_bins": 3461,
+        "lognorm_ctop": 0.7624963883270731,
+        "empirical_p998": 0.7737648078590003,
+        "gauss_meanksd": 0.6957526726379659,
+        "rolling_max": 0.8147934123085814,
+        "ml_gbm_p998": 0.5954131137900618,
+        "ewmq_p998": 0.22450158913608784
+      },
+      "min_n_120": {
+        "n_bins": 24,
+        "lognorm_ctop": 1.0,
+        "empirical_p998": 1.0,
+        "gauss_meanksd": 0.9583333333333334,
+        "rolling_max": 1.0,
+        "ml_gbm_p998": 1.0,
+        "ewmq_p998": 0.875
+      }
+    },
+    "rnd": {
+      "min_n_12": {
+        "n_bins": 5173,
+        "lognorm_ctop": 0.7316837425091823,
+        "empirical_p998": 0.6920549004446163,
+        "gauss_meanksd": 0.6412139957471487,
+        "rolling_max": 0.7568142277208583,
+        "ml_gbm_p998": 0.49285257094090035,
+        "ewmq_p998": 0.16373477672530445
+      },
+      "min_n_30": {
+        "n_bins": 4729,
+        "lognorm_ctop": 0.7100866990907169,
+        "empirical_p998": 0.6804821315288645,
+        "gauss_meanksd": 0.616409388877141,
+        "rolling_max": 0.7481497145273842,
+        "ml_gbm_p998": 0.4890158172231986,
+        "ewmq_p998": 0.13914146754070628
+      },
+      "min_n_60": {
+        "n_bins": 3915,
+        "lognorm_ctop": 0.6676883780332056,
+        "empirical_p998": 0.6684546615581098,
+        "gauss_meanksd": 0.584418901660281,
+        "rolling_max": 0.7399744572158365,
+        "ml_gbm_p998": 0.485947879407256,
+        "ewmq_p998": 0.1338441890166028
+      },
+      "min_n_120": {
+        "n_bins": 0,
+        "lognorm_ctop": NaN,
+        "empirical_p998": NaN,
+        "gauss_meanksd": NaN,
+        "rolling_max": NaN,
+        "ml_gbm_p998": NaN,
+        "ewmq_p998": NaN
+      }
+    }
+  },
+  "pinball_loss": {
+    "fastStorage": {
+      "lognorm_ctop": {
+        "n_bins": 4908,
+        "mean_pinball": 1.6403173622113514,
+        "median_pinball": 0.0061368018627837705
+      },
+      "empirical_p998": {
+        "n_bins": 4908,
+        "mean_pinball": 0.21765241487453868,
+        "median_pinball": 0.006214746296296288
+      },
+      "gauss_meanksd": {
+        "n_bins": 4908,
+        "mean_pinball": 0.257330956826807,
+        "median_pinball": 0.005393098318857923
+      },
+      "rolling_max": {
+        "n_bins": 4908,
+        "mean_pinball": 0.20816110707765087,
+        "median_pinball": 0.006430357142857148
+      },
+      "ml_gbm_p998": {
+        "n_bins": 4172,
+        "mean_pinball": 0.4070495589044303,
+        "median_pinball": 0.006938031508199679
+      },
+      "ewmq_p998": {
+        "n_bins": 4908,
+        "mean_pinball": 1.5308653402160624,
+        "median_pinball": 0.01808058489967447
+      }
+    },
+    "rnd": {
+      "lognorm_ctop": {
+        "n_bins": 5173,
+        "mean_pinball": 0.8221729460092524,
+        "median_pinball": 0.006108266883117334
+      },
+      "empirical_p998": {
+        "n_bins": 5173,
+        "mean_pinball": 0.1454629999164483,
+        "median_pinball": 0.007085303703703822
+      },
+      "gauss_meanksd": {
+        "n_bins": 5173,
+        "mean_pinball": 0.23441963275872105,
+        "median_pinball": 0.007330212123716802
+      },
+      "rolling_max": {
+        "n_bins": 5173,
+        "mean_pinball": 0.1390173076406572,
+        "median_pinball": 0.007164153439153446
+      },
+      "ml_gbm_p998": {
+        "n_bins": 4687,
+        "mean_pinball": 0.33794247166770924,
+        "median_pinball": 0.010342056162225674
+      },
+      "ewmq_p998": {
+        "n_bins": 5173,
+        "mean_pinball": 1.9759534608012996,
+        "median_pinball": 0.03190506617045795
+      }
+    }
+  }
+}
