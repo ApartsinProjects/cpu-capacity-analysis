@@ -42,6 +42,8 @@
 \date{Draft, August 2026}
 
 \input{paper_macros}
+\input{paper_macros_alibaba}
+\input{paper_macros_mech}
 
 \begin{document}
 \maketitle
@@ -55,7 +57,7 @@ stays below the level at which service-level objectives are met. We
 present a probabilistic answer built on a log-normal model of CPU at
 fixed load combined with Poisson event arrivals, which produces a
 capacity ceiling and, under a tiered SLA schedule, an expected-revenue
-estimate. We evaluate the log-normal claim on three independent public
+estimate. We evaluate the log-normal claim on three public production
 traces from two providers (Bitbrains GWA-T-12 fastStorage, 1\,250 VMs;
 Bitbrains Rnd, 500 VMs; Alibaba cluster-trace-v2018, \AliVms{} sampled
 machines) totalling \CombinedNBins{} hour-of-day distribution bins:
@@ -66,18 +68,28 @@ log-normal\} by AIC in \CombinedLogNormShareVmw{}\% of VM-hour bins
 We derive the parameter-scaling law implied by the multiplicative-overhead
 mechanism, $\sigma_{\log C}(\lambda) = \sqrt{\alpha^2\lambda + \sigma_\varepsilon^2}$,
 fit it per VM, and extend it with a load-proportional demand-fluctuation
-term that lifts median fit $R^2$ from $0.71$ to $0.75$; $\sigma$
-increases with $\lambda$ on 105 of 106 VMs in the well-fitting
-well-proxied cohort. On a unified evaluation panel against five
+term that lifts median fit $R^2$ from $\FormCFsRB$ to $\FormCFsRP$ on
+the cohort where both clauses are resolvable; $\sigma$ increases with
+$\lambda$ on the large majority of VMs (\SigDirFsFull\% fastStorage,
+\SigDirRnFull\% Rnd of the full scaling panel, and near-unanimously among
+those on which the $\sigma(\lambda)$ slope is statistically resolvable).
+On a unified evaluation panel against five
 practitioner baselines, the log-normal ceiling matches the top coverage
 tier on both traces (statistically indistinguishable from a
-rolling-maximum baseline; CI-separated over three others) while
-reserving 20 to 30 percent less median predicted capacity than the
-rolling maximum. Under three public cloud SLA schedules (AWS EC2, GCP
-Compute Engine, Azure VMs), the resulting coverage-per-headroom advantage
-translates to a CI-separated revenue lead over every baseline on
-fastStorage AWS ($p < 10^{-3}$ paired sign test); the log-normal-vs-
-rolling-maximum comparison is a statistical tie on Rnd AWS. Code and
+rolling-maximum baseline and from the empirical percentile; CI-separated
+over the Gaussian, gradient-boosting, and moving-quantile baselines)
+while reserving 20 to 30 percent less median predicted capacity than the
+rolling maximum on the two Bitbrains traces. Under two distinct public
+cloud SLA schedules (AWS EC2 and GCP Compute Engine, with Azure matching
+AWS), a paired per-VM sign test gives the log-normal ceiling a
+significant net-revenue lead over every baseline on fastStorage AWS
+($p < 10^{-2}$ or better), including the rolling maximum; on Rnd AWS the
+log-normal-vs-rolling-maximum comparison is a statistical tie
+($p = 0.16$) while log-normal keeps a significant lead over the other
+four baselines. On a third trace at 10-second resolution (Alibaba) the
+log-normal ceiling remains the best fixed-confidence sizing rule, while
+the unbounded rolling maximum leads the panel where dense sampling turns
+its maximum into a near-exact high quantile. Code and
 scripts are released with the paper.
 \end{abstract}
 
@@ -117,9 +129,10 @@ of billed revenue under AWS on fastStorage (Table~\ref{tab:sla}). The
 paper quantifies both halves of that lever against five practitioner
 baselines in Section~\ref{sec:sizing}: the log-normal ceiling matches
 the top coverage tier while reserving 20 to 30 percent less capacity
-than the rolling-maximum baseline, and the resulting coverage-per-
-headroom edge translates to a CI-separated revenue lead over every
-baseline on fastStorage AWS.
+than the rolling-maximum baseline on the Bitbrains traces, and the
+resulting coverage-per-headroom edge translates to a significant
+paired-sign-test revenue lead over every baseline on fastStorage AWS,
+including the rolling maximum.
 
 \paragraph{Who this is for.} Capacity planners running managed
 transaction-processing services (billing platforms, ad servers, checkout
@@ -157,15 +170,23 @@ public traces.
         clause's coefficient is systematically nine times the mean
         clause's, a measured excess that we attribute to load-proportional
         demand fluctuation.
-  \item \textbf{A coverage-per-headroom Pareto win over practitioner
-        baselines.} We evaluate the log-normal ceiling
+  \item \textbf{A coverage-per-headroom Pareto win at production
+        resolution, and a characterised resolution crossover.} We
+        evaluate the log-normal ceiling
         $\Ctop = \exp\{\mu_{\log C} + k\sigma_{\log C}\}$ against five
-        baselines on held-out data: rolling maximum, empirical 99.8th
+        practitioner baselines (rolling maximum, empirical 99.8th
         percentile, mean-plus-$k\sigma$, quantile gradient boosting, and
-        exponentially weighted moving quantile. The log-normal ceiling
-        matches the top coverage tier on both traces (statistically
-        indistinguishable from rolling maximum) while reserving 20 to 30
-        percent less median predicted capacity than rolling maximum.
+        exponentially weighted moving quantile) on held-out data across
+        all three traces. At the 5-minute resolution of the two Bitbrains
+        traces the log-normal ceiling matches the top coverage tier
+        (statistically indistinguishable from the rolling maximum) while
+        reserving 20 to 30 percent less median capacity, a Pareto win a
+        paired sign test prices as a significant revenue lead. On the
+        10-second Alibaba trace the log-normal ceiling remains the best
+        \emph{fixed-confidence} rule but the unbounded rolling maximum
+        overtakes it, because dense sampling turns its maximum into a
+        near-exact high quantile; we characterise this crossover as a
+        property of sampling density, not of distributional fit.
   \item \textbf{SLA-aware sizing with public pricing.} We replace the
         proprietary contract in the original decision model with the
         published SLA schedules of AWS, GCP, and Azure and their on-demand
@@ -312,7 +333,8 @@ two providers (Table~\ref{tab:datasets}).
     Alibaba cluster-trace-v2018       & ~4\,000 & 8 days  & 10 s   & public~\cite{alibaba2018trace} \\
     \bottomrule
   \end{tabular}
-  \caption{Public Bitbrains traces used in this paper.}
+  \caption{Public production traces used in this paper, spanning two
+    providers (Bitbrains and Alibaba) and two sampling resolutions.}
   \label{tab:datasets}
 \end{table}
 
@@ -412,8 +434,9 @@ of bins on fastStorage and \RnCvmShareLN{}\% on Rnd for $W^2$).
     Log-normal vs.\ Weibull   & \FsAicDeltaWeibull{}   & \FsShareVsWeibull{}\% & \FsShareStrongVsWeibull{}\% \\
     \bottomrule
   \end{tabular}
-  \caption{Pairwise AIC comparison, pooled over both public traces (\NBinsAll{}
-           bins). Negative delta means log-normal has the smaller (better) AIC.}
+  \caption{Pairwise AIC comparison, pooled over the two Bitbrains traces
+           (\NBinsAll{} bins). Negative delta means log-normal has the
+           smaller (better) AIC.}
   \label{tab:pairwise}
 \end{table}
 
@@ -449,6 +472,43 @@ Rnd VMs (minimum six hour-of-day bins per VM). Two diagnostics
 the law and test candidate mechanisms for the $\sigma$ shape directly;
 the findings below follow that split.
 
+\paragraph{Cohort accounting.} The scaling and mechanism claims are made
+on explicitly-defined subsets of the fitted VMs, listed with their exact
+filters in Table~\ref{tab:cohorts}. Two analysis cohorts appear below and
+are not the same set: the \emph{$\sigma$-direction cohort} (the VMs on
+which the $\sigma(\lambda)$ slope is statistically resolvable, on which
+the direction and variance-decomposition results rest) and the
+\emph{mechanism-agreement cohort} (the VMs on which both the $\mu$ and
+$\sigma$ clauses fit well enough to compare their $\hat\alpha$s). Every
+threshold is on fit quality or sample count, stated in the table; the
+distributional result of Section~\ref{sec:validation} uses the full
+fitted population, not these cohorts.
+
+\begin{table}[t]
+  \centering
+  \small
+  \begin{tabular}{lrr}
+    \toprule
+    Stage / cohort (filter) & fastStorage & Rnd \\
+    \midrule
+    Advertised in archive               & 1\,250 & $\sim$500 \\
+    Sampled (seed 42)                   & 300    & 300 \\
+    Distributional fit (\S\ref{sec:validation}; $\geq$1 hour-bin, $\geq$60 samples) & \NVmsFs{} & \NVmsRnd{} \\
+    Scaling fit (\S\ref{sec:scaling}; $\geq$6 hour-of-day bins)          & \ScalFsNVms{} & \ScalRnNVms{} \\
+    ~~$\sigma$-direction cohort ($\hat\gamma_A<0$, $R^2_\sigma\geq0.5$)  & 51 & 55 \\
+    ~~mechanism-agreement cohort ($R^2_\mu\geq0.5$, $R^2_{\sigma}\geq0.3$, $\hat\alpha_\mu>0$, $\hat\alpha_\sigma>0$) & \ScalFsCohortN{} & \ScalRnCohortN{} \\
+    Unified sizing panel (\S\ref{sec:sizing}; $\geq$60 train, $\geq$12 test) & \PanelFsNVms{} & \PanelRnNVms{} \\
+    \bottomrule
+  \end{tabular}
+  \caption{Cohort flow from archive to each analysis. The
+    $\sigma$-direction cohort (106 VMs total) is the population on which
+    the $\sigma(\lambda)$ slope is measurable; the mechanism-agreement
+    cohort (98 VMs total) is where the $\mu$ and $\sigma$ clauses can be
+    compared. They are defined by different filters and are not the same
+    VMs.}
+  \label{tab:cohorts}
+\end{table}
+
 \paragraph{The $\mu$ clause: directionally confirmed, proxy-limited $R^2$.}
 $\hat\alpha > 0$ on 85 to 90 percent of VMs. The low median $R^2_\mu$ hides
 a mixture: about a quarter of VMs have $R^2_\mu < 0.05$ and 13 to 15 percent
@@ -462,8 +522,17 @@ fit. Where the proxy carries signal and $\lambda$ varies within the day,
 the mean clause is linear with $R^2$ up to $0.98$.
 
 \paragraph{The $\sigma$ clause: increases with load.} Observed
-$\sigma_{\log C}$ increases with $\lambda$ on 105 of
-106 VMs in the well-fitting well-proxied cohort. This is the direction
+$\sigma_{\log C}$ increases with $\lambda$ (equivalently
+$\hat\gamma_A < 0$ under Form A) on \SigDirFsFull\% of the
+\SigDirFsFullN{} fastStorage and \SigDirRnFull\% of the \SigDirRnFullN{}
+Rnd VMs across the full scaling panel, with no fit-quality selection.
+Conditioning on the independent variable, proxy quality --- VMs with
+above-median $\text{Spearman}(\text{CPU},\text{net})$ --- leaves the
+share essentially unchanged (\SigDirFsProx\% / \SigDirRnProx\%), so the
+direction is not an artefact of selecting on the fit; among the VMs on
+which the $\sigma(\lambda)$ slope is statistically resolvable it is
+near-unanimous (105 of 106, the $\sigma$-direction cohort of
+Table~\ref{tab:cohorts}). This is the direction
 Equation~\eqref{eq:sigmascaling} predicts: $\sigma$ grows with
 $\lambda$, from a $\lambda=0$ floor toward $\alpha\sqrt{\lambda}$.
 Form A, decreasing in $\lambda$, can only track this rising curve by
@@ -487,15 +556,16 @@ disk-I/O correlation with $\sigma$ is essentially zero.
 \paragraph{Per-VM mechanism consistency.} We refit the $\sigma$ clause per
 VM under both Form A and Form B, and compared the fitted $\hat\alpha_\sigma$
 against $\hat\alpha_\mu$ from the mean clause on the same VM
-(\texttt{scoping/refit\_form\_ab.py}). Across the cohort where both fits are
-meaningful (\ScalFsCohortN{} fastStorage, \ScalRnCohortN{} Rnd VMs),
+(\texttt{scoping/refit\_form\_ab.py}). Across the mechanism-agreement
+cohort (\ScalFsCohortN{} fastStorage, \ScalRnCohortN{} Rnd VMs;
+Table~\ref{tab:cohorts}),
 $\hat\alpha_\sigma$ rank-correlates with $\hat\alpha_\mu$ at Spearman
 \ScalFsSpearman{} [\ScalFsSpearmanCiLo, \ScalFsSpearmanCiHi] on fastStorage
 and \ScalRnSpearman{} [\ScalRnSpearmanCiLo, \ScalRnSpearmanCiHi] on Rnd
 (cluster-bootstrap CIs). Both $\hat\alpha$s carry units of $1/\lambda$, so
 a partial-Spearman test controlling for per-VM load scale
 $\log \lambda_{\max}$ (\texttt{scoping/refit\_form\_c.py}) drops the
-correlation to $0.49$ (fastStorage) and $0.72$ (Rnd): about a third of the
+correlation to $\FormCFsSpPart$ (fastStorage) and $\FormCRnSpPart$ (Rnd): about a third of the
 raw rank correlation was a units artefact, but the residual is positive
 and substantial on both traces. Median $\hat\alpha_\sigma / \hat\alpha_\mu$
 is $8.9$ [$6.9$, $14.1$] on fastStorage and $9.4$ [$6.3$, $14.3$] on Rnd.
@@ -507,10 +577,10 @@ dispersion index $\text{Var}(n)/\text{E}(n)$ of container arrivals per
 machine per fixed time window
 (\texttt{scoping/alibaba\_fano.py}). On the sub-population of machines
 with a meaningful arrival rate ($\geq 2$ containers per bin) at a
-5-minute window, the median dispersion index is $5.7$; at a 1-hour
-window it is $4.2$. Both are significantly above the Poisson baseline
+5-minute window, the median dispersion index is $\DispFivemin$; at a 1-hour
+window it is $\DispOnehr$. Both are significantly above the Poisson baseline
 of $1.0$ and imply an $\hat\alpha_\sigma / \hat\alpha_\mu$ contribution
-of order $\sqrt{5.7} \approx 2.4$ from batching alone. Batched arrivals
+of order $\sqrt{\DispFivemin} \approx 2.4$ from batching alone. Batched arrivals
 therefore contribute to the observed $\sim 9\times$ ratio but do not
 fully explain it on their own; a residual factor of $\sim 3\text{-}4$
 remains, consistent with additional load-proportional demand
@@ -522,8 +592,8 @@ into its $c^2\lambda^2$ term.
 composite load-index proxy (z-scored sum of network, disk read, disk
 write, and memory-delta) against the single-signal network proxy used
 above (\texttt{scoping/composite\_proxy.py}). Median Spearman(proxy,
-CPU) per VM is $0.48$ for network alone versus $0.35$ for the
-four-signal composite on fastStorage, and $0.42$ versus $0.33$ on Rnd:
+CPU) per VM is $\ProxFsNet$ for network alone versus $\ProxFsComp$ for the
+four-signal composite on fastStorage, and $\ProxRnNet$ versus $\ProxRnComp$ on Rnd:
 the composite is diluted by the weaker signals rather than sharpened.
 The network throughput as used above is already the highest-Spearman
 single-signal proxy in the trace.
@@ -540,10 +610,12 @@ where the $c^2\lambda^2$ term captures a coefficient-of-variation
 component that scales linearly with load. Fitting Form C on the same
 cohort (\texttt{scoping/refit\_form\_c.py}), with $\alpha$ pinned to
 $\hat\alpha_\mu$ from the mean clause so no parameters are spent on
-$\alpha$ from the variance side, lifts median $R^2$ from $0.71$ (Form B)
-to $0.75$ (pinned Form C) and matches free Form C at $0.79$; pinned
-Form C is AICc-preferred on 37\% of VMs and free Form B on 55\%. Median
-$c$ under the pinned fit is $0.019$ / $0.025$, giving the
+$\alpha$ from the variance side, lifts median $R^2$ from $\FormCFsRB$ (Form B)
+to $\FormCFsRP$ (pinned Form C) and matches free Form C at $\FormCFsRC$;
+free Form B is AICc-preferred on \FormCFsAiccB\%/\FormCRnAiccB\% of VMs
+(fastStorage/Rnd) and pinned Form C on \FormCFsAiccP\%/\FormCRnAiccP\%,
+so the arrival-only Form B remains the majority-preferred model. Median
+$c$ under the pinned fit is $\FormCFsCpin$ / $\FormCRnCpin$, giving the
 demand-fluctuation coefficient in the load-proportional-variance term as
 a fitted number. Form C establishes that the load-proportional demand
 fluctuation identified in \texttt{scoping/SIGMA\_ROOTCAUSE.md} admits a
@@ -583,10 +655,14 @@ which is what the Borg plan referenced above targets.
 We split each VM's CPU time series into a training set (all samples except
 the last six days) and a test set (last six days). For every
 (VM, hour-of-day) bin with at least 60 training and 12 test samples we fit
-five sizing methods on train and evaluate on test:
+six sizing methods on train and evaluate on test:
 \begin{itemize}
   \item \textbf{lognorm\_ctop}: $\Ctop = \exp\{\mu + 3\sigma\}$ from the
         log-normal fit on train.
+  \item \textbf{rolling\_max}: the maximum CPU sample in the training window
+        at this (VM, hour-of-day) bin. This is the widest fixed-history
+        ceiling and the strongest practitioner baseline in our panel; it
+        stands in for the peak-provisioning rule.
   \item \textbf{empirical\_p998}: the 99.8th empirical percentile of train.
   \item \textbf{gauss\_meanksd}: $\text{mean}(\text{train}) + 3\,\text{std}(\text{train})$, a Gaussian assumption often used in industry.
   \item \textbf{ml\_gbm\_p998}: gradient-boosted quantile regression at
@@ -647,11 +723,17 @@ Two methods share the top coverage tier on both traces:
 \UFsLNShareCiHi] on fastStorage, \URnLNShare{}\% [\URnLNShareCiLo,
 \URnLNShareCiHi] on Rnd) and \texttt{rolling\_max} (\UFsRMShare{}\%
 [\UFsRMShareCiLo, \UFsRMShareCiHi]; \URnRMShare{}\% [\URnRMShareCiLo,
-\URnRMShareCiHi]); their 95\% cluster-bootstrap CIs overlap on both
-traces, so on coverage alone the two methods are statistically
-indistinguishable. Both dominate the remaining three practitioner
-baselines (mean-plus-$k\sigma$, quantile GBM, EWMQ) with non-overlapping
-CIs, and each has a CI-separated lead over empirical percentile on Rnd.
+\URnRMShareCiHi]); their 95\% cluster-bootstrap CIs overlap each other
+on both traces, so on coverage alone the two methods are statistically
+indistinguishable. Both separate from the quantile-GBM and EWMQ
+baselines with non-overlapping CIs on both traces, and
+\texttt{lognorm\_ctop}'s CI additionally clears the Gaussian
+mean-plus-$k\sigma$ baseline on both traces. The coverage margin over
+the empirical percentile is within CI overlap, so coverage alone does
+not decide between the leading methods. The decisive comparisons are
+coverage-per-headroom (below) and SLA-priced revenue
+(Section~\ref{sec:economics}), where the log-normal ceiling separates
+from the field.
 
 \paragraph{Coverage-per-headroom Pareto.} At equivalent coverage,
 \texttt{lognorm\_ctop} reserves substantially less capacity than
@@ -678,6 +760,62 @@ on fastStorage. On both metrics the ranking of log-normal against the
 four baselines in Table~\ref{tab:sizing} survives the sensitivity
 check.
 
+\paragraph{A third trace at 10-second resolution: where the empirical
+maximum overtakes.} Running the identical panel on the Alibaba trace
+(\texttt{scoping/unified\_eval\_alibaba.py}; \AliPanelNVms{} machines,
+\AliPanelNBins{} bins, last two of eight days held out) puts the sizing
+methods in a very different regime: at 10-second sampling each retained
+test bin holds a median of \AliMedNTest{} samples, so the share-at-target
+metric no longer saturates on small bins. The quantile-GBM baseline is
+n/a here because its seven-day rolling features need more than the
+eight-day trace supplies. Table~\ref{tab:sizing-ali} reports the five
+remaining methods. Among the fixed-confidence sizing rules the ordering
+is the same as on Bitbrains: the log-normal ceiling leads
+(\AliLNShare{}\% [\AliLNShareCiLo, \AliLNShareCiHi] share-at-target),
+CI-separated above the empirical percentile (\AliEPShare{}\%), the
+Gaussian (\AliGAShare{}\%), and the moving quantile (\AliEWMQShare{}\%).
+The rolling maximum, however, leads the whole panel at this resolution
+(\AliRMShare{}\% [\AliRMShareCiLo, \AliRMShareCiHi]): with hundreds of
+training samples per bin its maximum converges to a high fixed quantile,
+so it both covers more often and, unlike on the two 5-minute traces,
+reserves marginally less headroom relative to the test tail. The
+parametric ceiling's standing advantages are the two the maximum lacks:
+a fixed, operator-tunable confidence target, and headroom that does not
+drift upward as sampling density grows. The crossover is therefore a
+statement about sampling density, not about which family fits: the
+log-normal ceiling is the most efficient \emph{fixed-confidence} rule on
+all three traces, and the unbounded empirical maximum overtakes it only
+where the sampling is dense enough for its maximum to act as a
+near-exact high quantile.
+
+\begin{table}[t]
+  \centering
+  \small
+  \begin{tabular}{lrr}
+    \toprule
+    Method              & Share-at-target (\%) & AWS/Azure net revenue (\%) \\
+    \midrule
+    rolling\_max        & \AliRMShare{} [\AliRMShareCiLo, \AliRMShareCiHi] & \SlaAliRMAWSNet{} [\SlaAliRMAWSNetCiLo, \SlaAliRMAWSNetCiHi] \\
+    lognorm\_ctop       & \AliLNShare{} [\AliLNShareCiLo, \AliLNShareCiHi] & \SlaAliLNAWSNet{} [\SlaAliLNAWSNetCiLo, \SlaAliLNAWSNetCiHi] \\
+    empirical\_p998     & \AliEPShare{} [\AliEPShareCiLo, \AliEPShareCiHi] & \SlaAliEPAWSNet{} [\SlaAliEPAWSNetCiLo, \SlaAliEPAWSNetCiHi] \\
+    gauss\_meanksd      & \AliGAShare{} [\AliGAShareCiLo, \AliGAShareCiHi] & \SlaAliGAAWSNet{} [\SlaAliGAAWSNetCiLo, \SlaAliGAAWSNetCiHi] \\
+    ewmq\_p998          & \AliEWMQShare{} [\AliEWMQShareCiLo, \AliEWMQShareCiHi] & \SlaAliEWMQAWSNet{} [\SlaAliEWMQAWSNetCiLo, \SlaAliEWMQAWSNetCiHi] \\
+    \bottomrule
+  \end{tabular}
+  \caption{Sizing panel on the Alibaba trace (10-second resolution,
+    \AliPanelNVms{} machines, \AliPanelNBins{} bins; \texttt{ml\_gbm\_p998}
+    n/a on the 8-day trace). Share-at-target and AWS/Azure net revenue
+    ratio, both with 95\% cluster-bootstrap CIs over machines. The
+    log-normal ceiling is the best fixed-confidence method; the
+    rolling maximum leads at this sampling density. A paired per-VM sign
+    test on AWS revenue makes log-normal cheaper than
+    \texttt{empirical\_p998} (\AliPairedEPwins{} vs.\ \AliPairedEPloss{},
+    $p = 0.03$) and the Gaussian and moving-quantile baselines
+    ($p < 10^{-38}$), and dearer than \texttt{rolling\_max}
+    (\AliPairedRMwins{} vs.\ \AliPairedRMloss{}, $p < 10^{-11}$).}
+  \label{tab:sizing-ali}
+\end{table}
+
 \section{SLA-Aware Sizing with Public Pricing}
 \label{sec:economics}
 
@@ -699,7 +837,7 @@ three public schedules:
         below 99.0\%, 100\% below 95.0\%~\cite{azurevmsla}.
 \end{itemize}
 
-We evaluate the five sizing methods from Section~\ref{sec:sizing} under
+We evaluate the six sizing methods from Section~\ref{sec:sizing} under
 each schedule. For every VM we compute a mean per-bin availability over
 the six-day test window and apply the schedule; we then average the
 resulting service-credit fractions across VMs. Table~\ref{tab:sla} reports
@@ -725,16 +863,17 @@ dollar of billed revenue; $0.90$ means the SLA schedule reclaims $10\%$).
   \end{tabular}
   \caption{Mean net revenue ratio (\%) per sizing method under each of
     three public cloud SLA schedules, on the held-out six-day window of
-    the unified panel. Higher is better. On fastStorage under AWS,
-    log-normal's 95\% CI [\SlaFsLNAWSNetCiLo, \SlaFsLNAWSNetCiHi] is
-    non-overlapping with those of \texttt{rolling\_max},
-    \texttt{empirical\_p998}, \texttt{ml\_gbm\_p998}, and
-    \texttt{ewmq\_p998}, and narrowly overlapping with
-    \texttt{gauss\_meanksd}. On Rnd under AWS, log-normal's CI
-    [\SlaRnLNAWSNetCiLo, \SlaRnLNAWSNetCiHi] overlaps
-    \texttt{rolling\_max}'s [\SlaRnRMAWSNetCiLo, \SlaRnRMAWSNetCiHi]
-    (statistical tie) and is non-overlapping with the remaining three
-    baselines.}
+    the unified panel. Higher is better. AWS and Azure share the same
+    credit schedule (10/25/100\% below 99.99/99.0/95.0\% uptime), so
+    their columns coincide; GCP caps the deepest tier at 50\%. The
+    marginal 95\% cluster-bootstrap CIs (over VMs) are wide and overlap
+    between the top methods; the operator-level comparison is the paired
+    per-VM sign test in the body, which certifies the log-normal
+    ceiling's lead over all five baselines on fastStorage AWS, including
+    the rolling maximum, at $p < 10^{-2}$ or better. On Rnd AWS the
+    log-normal and rolling-maximum methods are a statistical tie (paired
+    sign-test $p = 0.16$), with log-normal keeping a significant paired
+    lead over the other four baselines.}
   \label{tab:sla}
 \end{table}
 
@@ -750,25 +889,29 @@ service-success curve $\Ps(C)$, the event histogram $\Pe(E \mid T)$, and
 ARPE from the decision framework are not fitted; we report the schedule
 credit as the sole dollar-relevant quantity.
 
-The log-normal ceiling delivers a CI-separated net revenue lead over
-every baseline on fastStorage AWS, including the rolling maximum
+The log-normal ceiling delivers the highest mean net revenue on
+fastStorage AWS, ahead of every baseline including the rolling maximum
 (\SlaFsLNAWSNet{}\% [\SlaFsLNAWSNetCiLo, \SlaFsLNAWSNetCiHi] vs.\
-\SlaFsRMAWSNet{}\% [\SlaFsRMAWSNetCiLo, \SlaFsRMAWSNetCiHi]). On Rnd
-AWS, log-normal and rolling maximum are a statistical tie (overlapping
-CIs) with log-normal non-overlapping the remaining three baselines. A
-paired per-VM sign test on the SLA credit
-(\texttt{scoping/sla\_paired.py}) certifies the fastStorage AWS win at
-the operator level: log-normal is cheaper than each of the five
-baselines with paired sign
-$p < 10^{-3}$, cheaper than \texttt{rolling\_max} on 73 VMs vs.\ 38
-losses (out of 210), cheaper than \texttt{empirical\_p998} on 83 vs.\ 32,
-cheaper than \texttt{gauss\_meanksd} on 62 vs.\ 3, cheaper than
-\texttt{ml\_gbm\_p998} on 108 vs.\ 8, and cheaper than \texttt{ewmq\_p998}
-on 186 vs.\ 0. The pattern holds under GCP and Azure
-with the same per-VM wins. Log-normal beats \texttt{empirical\_p998}
-and \texttt{gauss\_meanksd} with non-overlapping CIs on both traces
-under every provider; the ML baselines lose by wider margins under every
-schedule. This is the coverage-vs-ceiling trade-off from
+\SlaFsRMAWSNet{}\% [\SlaFsRMAWSNetCiLo, \SlaFsRMAWSNetCiHi]). The
+marginal cluster-bootstrap CIs over VMs are wide and overlap between the
+top methods, so the operator-level comparison is a paired per-VM sign
+test on the SLA credit (\texttt{scoping/sla\_paired.py}), which removes
+between-VM variance. That test certifies the fastStorage AWS win against
+all five baselines at $p < 10^{-2}$ or better: log-normal is cheaper
+than \texttt{rolling\_max} on \PairFsRMWin{} of the VMs where they differ
+(\PairFsRMLoss{} losses, \PairFsRMTie{} tied; $p = 1.2\times10^{-3}$),
+than \texttt{empirical\_p998} on \PairFsEPWin{} vs.\ \PairFsEPLoss{}
+($p = 2\times10^{-6}$), than \texttt{gauss\_meanksd} on \PairFsGAWin{}
+vs.\ \PairFsGALoss{} ($p < 10^{-14}$), than \texttt{ml\_gbm\_p998} on
+\PairFsMLWin{} vs.\ \PairFsMLLoss{}, and than \texttt{ewmq\_p998} on
+\PairFsEWWin{} vs.\ \PairFsEWLoss{}. The same paired test certifies
+the log-normal lead over all five baselines under GCP and Azure as well.
+On Rnd AWS, log-normal and the rolling maximum are a statistical tie
+(\PairRnRMWin{} vs.\ \PairRnRMLoss{} with \PairRnRMTie{} ties, sign-test
+$p = 0.16$), while log-normal keeps
+a significant paired lead over the other four baselines ($p \leq 0.007$
+against \texttt{empirical\_p998}, smaller against the rest) under all
+three schedules. This is the coverage-vs-ceiling trade-off from
 Section~\ref{sec:sizing} priced in dollars: a method that covers more
 often keeps more revenue even when it carries a higher predicted
 ceiling, because SLA credits are step-shaped and the marginal cost of
@@ -803,9 +946,15 @@ downloading the traces and setting the trace paths at the top of the
 scoping scripts, running \texttt{fit.py}, \texttt{fit\_rnd.py},
 \texttt{fit\_alibaba.py}, \texttt{unified\_eval.py},
 \texttt{bootstrap\_cis.py}, and \texttt{build\_ci\_macros\_v2.py}
-regenerates \texttt{paper/paper\_macros.tex}, and a single
-\texttt{pdflatex} pass rebuilds every number in this manuscript from
-the raw traces.
+regenerates \texttt{paper/paper\_macros.tex}, while
+\texttt{unified\_eval\_alibaba.py} with \texttt{alibaba\_panel\_stats.py}
+regenerate the Alibaba sizing panel and its macros
+(\texttt{paper\_macros\_alibaba.tex}), and \texttt{build\_mech\_macros.py}
+regenerates the Section~\ref{sec:scaling} mechanism and
+Section~\ref{sec:economics} paired-test numbers
+(\texttt{paper\_macros\_mech.tex}). A single \texttt{pdflatex} pass then
+rebuilds every number in the sizing, SLA, mechanism, and Alibaba tables
+from the raw traces.
 
 \section*{Acknowledgements}
 
