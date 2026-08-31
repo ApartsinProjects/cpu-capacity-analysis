@@ -47,6 +47,7 @@
 \input{paper_macros_direct}
 \input{paper_macros_aligof}
 \input{paper_macros_frontcal}
+\input{paper_macros_diag}
 
 \begin{document}
 \maketitle
@@ -152,7 +153,7 @@ public traces.
 \subsection*{Contributions}
 
 \begin{itemize}
-  \item \textbf{Independent replication at scale.} We fit per-VM, per-hour
+  \item \textbf{Independent validation at scale.} We fit per-VM, per-hour
         log-normal distributions on three public production traces from
         two providers (Bitbrains fastStorage, Bitbrains Rnd, Alibaba
         cluster-trace-v2018), totalling \CombinedNVms{} units and
@@ -190,10 +191,10 @@ public traces.
         overtakes it, because dense sampling turns its maximum into a
         near-exact high quantile; we characterise this crossover as a
         property of sampling density, not of distributional fit.
-  \item \textbf{SLA-aware sizing with public pricing.} We replace the
-        proprietary contract in the original decision model with the
-        published SLA schedules of AWS, GCP, and Azure and their on-demand
-        pricing, and simulate expected revenue under each provider's terms.
+  \item \textbf{SLA-aware sizing with public pricing.} We instantiate the
+        decision layer's revenue-and-penalty function with the published
+        SLA schedules of AWS, GCP, and Azure and their on-demand pricing,
+        and simulate expected revenue under each provider's terms.
   \item \textbf{Reproducibility.} Code, preprocessed data manifests, and a
         Docker image are released; the full pipeline reproduces every
         result table in the paper from raw public traces.
@@ -551,7 +552,7 @@ have $R^2_\mu \geq 0.8$. Good $\mu$-fitters are consistently high-load VMs
 (median $\lambda_{\max}$ 44.9 KB/s in the $R^2_\mu \geq 0.8$ cohort vs.\
 9.5 KB/s in the rest, on fastStorage). Direct measurement of the load-proxy
 quality gives a median sample-level $\text{Spearman}(\text{CPU}, \text{net})$
-of $\approx 0.46$ on both traces, and the Spearman between the per-VM
+of $\approx \DiagProxyRho$ on both traces, and the Spearman between the per-VM
 proxy quality and $R^2_\mu$ is $\approx 0.27$: better proxy, better $\mu$
 fit. Where the proxy carries signal and $\lambda$ varies within the day,
 the mean clause is linear with $R^2$ up to $0.98$.
@@ -580,12 +581,12 @@ within-bin variance exactly into a between-day and a within-day component
 across the 106-VM cohort. On the load-conditional variance increase, the
 within-day (sub-hour burstiness) component accounts for a median 65\% and
 the between-day (level shifts) component 35\%; both components are positively
-correlated with $\lambda$ in about 90\% of VMs. Positive skew of $\log C$
-grows from about 0.33 at low load to 1.68 at high load, the fingerprint of
+correlated with $\lambda$ in about \DiagCompRise\% of VMs. Positive skew of $\log C$
+grows from about 0.33 at low load to \DiagSkewHi{} at high load, the fingerprint of
 short bursts on top of a stable baseline. Alternative explanations were
-ruled out: bimodality is ubiquitous (63\% of bins) but not correlated with
+ruled out: bimodality is ubiquitous (\DiagBimodal\% of bins) but not correlated with
 load, so mode switching is not the driver; saturation is excluded (median
-peak p95 CPU is 4\%, only 14 of 106 VMs ever log a sample above 90\%);
+peak p95 CPU is \DiagMaxPNine\%, only 14 of 106 VMs ever log a sample above 90\%);
 disk-I/O correlation with $\sigma$ is essentially zero.
 
 \paragraph{Per-VM mechanism consistency.} We refit the $\sigma$ clause per
@@ -980,10 +981,10 @@ The decision-support layer combines the per-bin capacity distribution
 $\Pc(C \mid E)$ with an event-arrival histogram $\Pe(E \mid T)$ and a service-success
 curve $\Ps(C)$ to produce expected succeeded events $S$, expected failed
 events $F$, expected availability $A = S/(S+F)$, and expected revenue
-$R = \revenueShare(A) \cdot \arpe \cdot S - \fine(A)$. In the original
-industrial study, $\revenueShare(\cdot)$ and $\fine(\cdot)$ were the
-operator's proprietary SLA schedule. To make this reproducible we substitute
-three public schedules:
+$R = \revenueShare(A) \cdot \arpe \cdot S - \fine(A)$. For a managed
+service, $\revenueShare(\cdot)$ and $\fine(\cdot)$ are set by the
+operator's service contract and are typically proprietary. To make the
+analysis reproducible we substitute three public cloud SLA schedules:
 
 \begin{itemize}
   \item \textbf{AWS EC2}: 10\% credit below 99.99\% monthly uptime, 25\%
@@ -1116,8 +1117,10 @@ container-load confirmation of the mean clause
 \texttt{alibaba\_frontier\_calib.py} with
 \texttt{build\_frontier\_calib\_macros.py} and
 \texttt{plot\_calibration.py} regenerate the matched-coverage frontier,
-the calibration numbers, and Figure~\ref{fig:calibration}. A single
-\texttt{pdflatex} pass then
+the calibration numbers, and Figures~\ref{fig:frontier}
+and~\ref{fig:calibration}; \texttt{build\_diag\_macros.py} regenerates the
+Section~\ref{sec:scaling} variance-decomposition diagnostics from
+\texttt{rc\_vm\_summary.csv}. A single \texttt{pdflatex} pass then
 rebuilds every number in the sizing, SLA, mechanism, and Alibaba tables
 from the raw traces.
 

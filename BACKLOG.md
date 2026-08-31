@@ -26,9 +26,16 @@
 - [x] Expand Autopilot positioning (closest deployed competitor): its
       percentile recommenders = our non-parametric running-quantile baselines;
       parametric ceiling adds confidence target + density-independence.
-- [ ] Anchor / cite the "original industrial study" or drop the replication
-      framing (Section 8 / verdict item 4).
-- [ ] Paper length now 15 pages; tighten toward venue norm if needed.
+- [x] Drop the uncitable "original industrial study" framing (verdict item 4):
+      "replication"->"validation"; Section 8 decision layer reworded to a
+      generic operator contract. No stale study reference remains.
+- [x] Macro-ize the central Section 6 diagnostics (proxy rho 0.46, bimodal 62%,
+      skew 1.7, max-p95 4%, component-rise 89%) via build_diag_macros.py.
+      Verified all match rc_vm_summary.csv. A few remain prose (65/35
+      increase-decomposition, 85-90% alpha share, 44.9/9.5 KB/s, 0.27) --
+      backed by committed diagnostics, low staleness risk.
+- [~] Length now 17 pages. NOT a blocker: Performance Evaluation is an Elsevier
+      journal with no hard page limit. Trim only if retargeting a conference.
 
 ## P2 (method-improvement ideas; smoke before scale)
 - [ ] Direct-dispersion Section 5 on Alibaba: replace network proxy with real
