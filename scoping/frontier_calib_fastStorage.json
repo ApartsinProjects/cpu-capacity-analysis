@@ -1,0 +1,143 @@
+{
+  "n_bins": 4908,
+  "n_units": 210,
+  "matched_coverage": {
+    "rm_share_at_m1": 0.7559087204563977,
+    "rm_median_ceiling_at_m1": 4.0,
+    "rm_median_headroom_at_m1": 0.19913903485780385,
+    "ln_matched_K": 2.5,
+    "ln_matched_share": 0.7603911980440098,
+    "ln_matched_median_ceiling": 2.819242061685821,
+    "ln_matched_median_headroom": 0.36365128252166123,
+    "ceiling_ratio_ln_over_rm": 0.7048105154214552,
+    "ceiling_saving_pct": 29.518948457854478
+  },
+  "calibration": {
+    "lognorm": [
+      {
+        "nominal": 0.9,
+        "realized_mean_cov": 0.8892130956426989,
+        "share_at_nominal": 0.6907090464547677,
+        "median_headroom": -0.032673479039923126
+      },
+      {
+        "nominal": 0.95,
+        "realized_mean_cov": 0.9382226272662925,
+        "share_at_nominal": 0.7361450692746536,
+        "median_headroom": 0.0573627849924634
+      },
+      {
+        "nominal": 0.99,
+        "realized_mean_cov": 0.9735703816610833,
+        "share_at_nominal": 0.7288101059494703,
+        "median_headroom": 0.296823011622714
+      },
+      {
+        "nominal": 0.998,
+        "realized_mean_cov": 0.9848379883877765,
+        "share_at_nominal": 0.8117359413202934,
+        "median_headroom": 0.5461756610735432
+      },
+      {
+        "nominal": 0.999,
+        "realized_mean_cov": 0.9870473018214465,
+        "share_at_nominal": 0.8325183374083129,
+        "median_headroom": 0.6667874149183239
+      }
+    ],
+    "gauss": [
+      {
+        "nominal": 0.9,
+        "realized_mean_cov": 0.8894177067526123,
+        "share_at_nominal": 0.6831703341483293,
+        "median_headroom": -0.03908372865358136
+      },
+      {
+        "nominal": 0.95,
+        "realized_mean_cov": 0.9260794715336799,
+        "share_at_nominal": 0.6903015484922576,
+        "median_headroom": 0.019620776223371255
+      },
+      {
+        "nominal": 0.99,
+        "realized_mean_cov": 0.9622683386481757,
+        "share_at_nominal": 0.632436837815811,
+        "median_headroom": 0.12485647507935387
+      },
+      {
+        "nominal": 0.998,
+        "realized_mean_cov": 0.9748535223380294,
+        "share_at_nominal": 0.7341075794621027,
+        "median_headroom": 0.23020396036903412
+      },
+      {
+        "nominal": 0.999,
+        "realized_mean_cov": 0.9777897809318868,
+        "share_at_nominal": 0.7642624286878565,
+        "median_headroom": 0.2735655976709177
+      }
+    ],
+    "empirical": [
+      {
+        "nominal": 0.9,
+        "realized_mean_cov": 0.8865457202780748,
+        "share_at_nominal": 0.7013039934800326,
+        "median_headroom": -0.05558470327620388
+      },
+      {
+        "nominal": 0.95,
+        "realized_mean_cov": 0.9245841625361283,
+        "share_at_nominal": 0.6780766096169519,
+        "median_headroom": -0.0034935103588368045
+      },
+      {
+        "nominal": 0.99,
+        "realized_mean_cov": 0.9659137981389535,
+        "share_at_nominal": 0.654441727791361,
+        "median_headroom": 0.06107242002291369
+      },
+      {
+        "nominal": 0.998,
+        "realized_mean_cov": 0.9766970544862458,
+        "share_at_nominal": 0.7793398533007335,
+        "median_headroom": 0.15643101627491127
+      },
+      {
+        "nominal": 0.999,
+        "realized_mean_cov": 0.9776731718937877,
+        "share_at_nominal": 0.793398533007335,
+        "median_headroom": 0.1788749019857174
+      }
+    ]
+  },
+  "metrics": {
+    "lognorm": {
+      "median_pinball": 0.006136802783355435,
+      "mean_pinball": 1.6403173622979872,
+      "median_excess_ratio": 1.5348688717672672,
+      "mean_coverage": 0.9861845211516055,
+      "share_at_target": 0.8231458842705787
+    },
+    "gauss": {
+      "median_pinball": 0.005393097875639796,
+      "mean_pinball": 0.2573309636455131,
+      "median_excess_ratio": 1.2151599558272905,
+      "mean_coverage": 0.9767027949891782,
+      "share_at_target": 0.7524449877750611
+    },
+    "empirical": {
+      "median_pinball": 0.0062147381249815226,
+      "mean_pinball": 0.2176524230526549,
+      "median_excess_ratio": 1.124999941326681,
+      "mean_coverage": 0.9766970544862458,
+      "share_at_target": 0.7793398533007335
+    },
+    "rolling_max": {
+      "median_pinball": 0.006430357228964567,
+      "mean_pinball": 0.2081611127270723,
+      "median_excess_ratio": 1.147377416004813,
+      "mean_coverage": 0.9791841165118235,
+      "share_at_target": 0.8209046454767727
+    }
+  }
+}

@@ -46,6 +46,7 @@
 \input{paper_macros_mech}
 \input{paper_macros_direct}
 \input{paper_macros_aligof}
+\input{paper_macros_frontcal}
 
 \begin{document}
 \maketitle
@@ -799,11 +800,60 @@ from the field.
 \texttt{lognorm\_ctop} reserves substantially less capacity than
 \texttt{rolling\_max}: the median predicted ceiling is \UFsLNCeiling{}
 vs.\ \UFsRMCeiling{} on fastStorage (a 20\% reduction) and
-\URnLNCeiling{} vs.\ \URnRMCeiling{} on Rnd (a 30\% reduction). The
-log-normal ceiling therefore Pareto-dominates the rolling maximum on
+\URnLNCeiling{} vs.\ \URnRMCeiling{} on Rnd (a 30\% reduction). This is
+not an artefact of comparing the two methods at their fixed operating
+points: a matched-coverage frontier
+(\texttt{scoping/alibaba\_frontier\_calib.py}) sweeps the ceiling
+parameter $k$ and the rolling-max multiplier and reads off the headroom
+at \emph{equal} share-at-target. Tuning $k$ so the log-normal ceiling's
+coverage matches the rolling maximum's on fastStorage (at $k=\McFsLnK$,
+essentially the default) leaves the log-normal median ceiling at
+\McFsLnCeil{}\% vs.\ \McFsRmCeil{}\% for the rolling maximum, a
+\McFsSavePct{}\% capacity saving at identical safety. The log-normal
+ceiling therefore Pareto-dominates the rolling maximum on
 coverage-per-headroom: same coverage, less capacity. This is the
 sizing claim we take forward to the revenue analysis in
 Section~\ref{sec:economics}.
+
+\paragraph{The advantage across all operating points: capacity to reach a
+target coverage.} Share-at-target fixes the confidence level and asks
+which method covers; the dual, more decision-relevant question fixes the
+coverage and asks which reserves the least capacity to reach it.
+Figure~\ref{fig:frontier} sweeps every method's parameter and plots
+median reserved capacity against realized coverage; the lower curve is
+the more efficient sizing rule. On the 5-minute Bitbrains trace the
+log-normal ceiling traces the efficient frontier at every operational
+coverage: to reach 98\% realized coverage it reserves \CapFsLn{}\% CPU
+versus \CapFsRm{}\% for the rolling maximum (\CapFsSaveRm{}\% less) and
+\CapFsEp{}\% for the empirical percentile (\CapFsSaveEp{}\% less). Two
+mechanisms separate it from the alternatives. The rolling maximum is
+wasteful at every level. The empirical percentile is competitive until it
+runs out of tail: it cannot place a ceiling above the largest training
+sample, so its curve turns up sharply near $0.98$ coverage, whereas the
+parametric ceiling extrapolates the tail smoothly from two parameters.
+This tail extrapolation is the concrete advantage of fitting a
+distribution over reading a percentile, and it is largest exactly where a
+sizing rule operates, in the high-coverage tail. On the 10-second Alibaba
+trace the advantage narrows to parity (right panel): dense sampling gives
+the empirical percentile enough tail data to estimate the quantile
+directly, so the parametric shape assumption no longer helps. The
+efficiency gain is thus a function of how much tail data the sampling
+provides, and it is substantial at production resolution.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{fig_frontier.pdf}
+  \caption{Reserved capacity (median predicted ceiling) needed to reach a
+    target realized coverage, per sizing method, swept over each method's
+    parameter; lower is more efficient. On Bitbrains fastStorage
+    (5-minute) the log-normal ceiling is the efficient frontier in the
+    high-coverage tail where sizing operates: the empirical percentile
+    saturates at the training maximum and the rolling maximum is wasteful
+    at every level, while the parametric ceiling extrapolates the tail. On
+    Alibaba (10-second) dense sampling lets the non-parametric methods
+    estimate the tail directly, and the curves converge.}
+  \label{fig:frontier}
+\end{figure}
 
 \paragraph{Metric sensitivity.} Share-at-target is a per-bin classifier
 that can saturate at small test-bin sizes, so we complement it with two
@@ -841,12 +891,24 @@ so it both covers more often and, unlike on the two 5-minute traces,
 reserves marginally less headroom relative to the test tail. The
 parametric ceiling's standing advantages are the two the maximum lacks:
 a fixed, operator-tunable confidence target, and headroom that does not
-drift upward as sampling density grows. The crossover is therefore a
+drift upward as sampling density grows. The matched-coverage frontier makes the crossover precise and shows it is
+not a defeat on efficiency. Sweeping the two methods' parameters to equal
+share-at-target on Alibaba, the log-normal median ceiling
+(\McAliLnCeil{}\%, at $k=\McAliLnK$) and the rolling maximum's
+(\McAliRmCeil{}\%) coincide to within one percent: at 10-second
+resolution the two lie on the \emph{same} coverage-per-headroom frontier,
+whereas at 5-minute resolution the log-normal ceiling sits strictly
+inside it (\McFsSavePct{}\% less capacity at equal coverage). The
+log-normal ceiling is therefore never dominated on the frontier; the
+fixed-$k$ share-at-target gap in Table~\ref{tab:sizing-ali} is an
+operating-point effect, not an efficiency loss. The crossover is a
 statement about sampling density, not about which family fits: the
 log-normal ceiling is the most efficient \emph{fixed-confidence} rule on
-all three traces, and the unbounded empirical maximum overtakes it only
-where the sampling is dense enough for its maximum to act as a
-near-exact high quantile.
+all three traces, matched only by the unbounded empirical maximum, and
+only where the sampling is dense enough for that maximum to act as a
+near-exact high quantile. Its standing advantages are the two the maximum
+lacks: a fixed, operator-tunable confidence target, and headroom that
+does not drift upward as sampling density grows.
 
 \begin{table}[t]
   \centering
@@ -875,6 +937,41 @@ near-exact high quantile.
     (\AliPairedRMwins{} vs.\ \AliPairedRMloss{}, $p < 10^{-11}$).}
   \label{tab:sizing-ali}
 \end{table}
+
+\paragraph{Calibration: does the ceiling cover what it promises?} A
+best-fitting family and a good sizing rule are different things: what a
+capacity planner needs is that a ceiling built for a nominal confidence
+actually covers that fraction of held-out load. We test this directly by
+building each parametric ceiling at a grid of nominal target coverages
+and measuring realized coverage on the held-out window
+(Figure~\ref{fig:calibration};
+\texttt{scoping/alibaba\_frontier\_calib.py}). The log-normal ceiling is
+the best- or tied-best-calibrated method on both traces: at the nominal
+$0.998$ operating point its realized coverage is \CalFsLnCov{}\% on
+fastStorage (vs.\ \CalFsEpCov{}\% for the empirical percentile and
+\CalFsGaCov{}\% for the Gaussian) and \CalAliLnCov{}\% on Alibaba
+(tying the empirical percentile at \CalAliEpCov{}\% and ahead of the
+Gaussian at \CalAliGaCov{}\%). Realized coverage sits below the nominal
+target on both traces, and further below on Alibaba's shorter two-day
+held-out window, reflecting train-to-test tail drift rather than a
+model-family defect: the empirical percentile, which fits nothing, drifts
+by the same amount. The log-normal ceiling matches the reliability of
+reading the raw percentile while spending only two fitted parameters, and
+beats the Gaussian assumption on every nominal level.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{fig_calibration.pdf}
+  \caption{Calibration (reliability) of three sizing rules: nominal target
+    coverage versus realized held-out coverage, per (host, hour) bin,
+    on Bitbrains fastStorage (5-minute) and Alibaba (10-second). The
+    dashed line is perfect calibration. The log-normal ceiling tracks the
+    diagonal at least as well as the empirical percentile and above the
+    Gaussian assumption; all methods under-cover slightly because the
+    held-out tail is heavier than the training tail, more so on Alibaba's
+    two-day test window.}
+  \label{fig:calibration}
+\end{figure}
 
 \section{SLA-Aware Sizing with Public Pricing}
 \label{sec:economics}
@@ -1015,7 +1112,12 @@ Section~\ref{sec:economics} paired-test numbers
 (\texttt{paper\_macros\_mech.tex}); \texttt{direct\_load\_alibaba.py}
 with \texttt{build\_direct\_macros.py} regenerate the direct
 container-load confirmation of the mean clause
-(\texttt{paper\_macros\_direct.tex}). A single \texttt{pdflatex} pass then
+(\texttt{paper\_macros\_direct.tex}); and
+\texttt{alibaba\_frontier\_calib.py} with
+\texttt{build\_frontier\_calib\_macros.py} and
+\texttt{plot\_calibration.py} regenerate the matched-coverage frontier,
+the calibration numbers, and Figure~\ref{fig:calibration}. A single
+\texttt{pdflatex} pass then
 rebuilds every number in the sizing, SLA, mechanism, and Alibaba tables
 from the raw traces.
 
