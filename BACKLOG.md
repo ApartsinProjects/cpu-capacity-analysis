@@ -37,6 +37,15 @@
 - [~] Length now 17 pages. NOT a blocker: Performance Evaluation is an Elsevier
       journal with no hard page limit. Trim only if retargeting a conference.
 
+## Done (later cycles)
+- [x] Multiple-comparison correction (Holm/BH) over the 14-test paired family:
+      12/14 Holm, 13/14 BH survive; failures are already-reported non-decisive.
+- [x] Calibrated-regime SLA variant (B7): ranking holds in a realistic 0.999
+      band (fastStorage AWS lognorm 92.1%); rolling-max keeps Alibaba lead.
+- [x] Housekeeping: scratch logs/pycache gitignored; 7 commits pushed to
+      origin/main (280de6f). Left root refit_ab_* + ml_rich_* untracked
+      (pre-existing, differ from scoping/, not created this session).
+
 ## P2 (method-improvement ideas; smoke before scale)
 - [ ] Direct-dispersion Section 5 on Alibaba: replace network proxy with real
       container-arrival counts as lambda; refit mu/sigma clauses -> converts
