@@ -1,1 +1,7 @@
 # nothing to ignore for now
+
+# scratch logs / caches
+scoping/*.err
+scoping/*.out
+__pycache__/
+*.pyc
