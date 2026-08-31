@@ -44,6 +44,7 @@
 \input{paper_macros}
 \input{paper_macros_alibaba}
 \input{paper_macros_mech}
+\input{paper_macros_direct}
 
 \begin{document}
 \maketitle
@@ -598,6 +599,32 @@ the composite is diluted by the weaker signals rather than sharpened.
 The network throughput as used above is already the highest-Spearman
 single-signal proxy in the trace.
 
+\paragraph{Direct load measurement on Alibaba (no proxy).} The Bitbrains
+fits above use network throughput as a load proxy because the trace
+carries no workload count. Alibaba does: \texttt{container\_meta.csv}
+records the containers placed on each machine, so we can replace the
+proxy with a directly-measured offered-load index and test the mean
+clause without any inferred stand-in
+(\texttt{scoping/direct\_load\_alibaba.py}). The dense such index is the
+number of co-located containers per machine (a count, not an
+arrival rate, so it carries no sampling-rate caveat). Across
+\DirNMach{} machines, mean log-CPU rises with co-located container count
+at Spearman \DirNcontRho{} ($p < 10^{-20}$; decile-level Spearman
+\DirNcontDecRho{}), an order of magnitude above a machine-label-shuffle
+negative control (95th-percentile $|\rho| = \DirNegP{}$). This is a
+direct confirmation of the linear mean clause $\mu_{\log C}(\lambda) =
+\alpha\lambda + \beta$ against actual placed load rather than a proxy.
+Summed provisioned CPU ($\sum$\,\texttt{cpu\_request}) is a weaker index
+(Spearman \DirSumreqRho{}) because it saturates once a machine is fully
+provisioned: past that point extra provisioning is oversubscription, not
+realized load, whereas the container count keeps tracking it. The
+within-machine $\sigma(\lambda)$ slope is not identifiable on this trace
+because container placement is near-static (\DirNstops{} stop events
+across \DirNcontainers{} containers, so per-machine load barely varies
+over the eight days); the dispersion evidence therefore rests on the
+Fano index reported above, and the direct measurement here certifies the
+mean clause specifically.
+
 \paragraph{Form C: an explicit demand-fluctuation fit.} The attribution of
 the excess to load-proportional demand fluctuation predicts a specific
 extended form,
@@ -952,7 +979,10 @@ regenerate the Alibaba sizing panel and its macros
 (\texttt{paper\_macros\_alibaba.tex}), and \texttt{build\_mech\_macros.py}
 regenerates the Section~\ref{sec:scaling} mechanism and
 Section~\ref{sec:economics} paired-test numbers
-(\texttt{paper\_macros\_mech.tex}). A single \texttt{pdflatex} pass then
+(\texttt{paper\_macros\_mech.tex}); \texttt{direct\_load\_alibaba.py}
+with \texttt{build\_direct\_macros.py} regenerate the direct
+container-load confirmation of the mean clause
+(\texttt{paper\_macros\_direct.tex}). A single \texttt{pdflatex} pass then
 rebuilds every number in the sizing, SLA, mechanism, and Alibaba tables
 from the raw traces.
 

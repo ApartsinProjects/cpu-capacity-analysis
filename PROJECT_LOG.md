@@ -9,6 +9,31 @@ Paper draft target: *Performance Evaluation* (Elsevier). Core empirical result
 2 providers) is solid and macro-backed. Decision-layer sections (sizing, SLA) were
 Bitbrains-only. This session extends them to Alibaba and repairs integrity defects.
 
+## Cycle 3 (2026-08-31): direct proxy-free load measurement (Fable-planned) of the mean clause
+
+**Fable planned the caveat-free protocol; executed here.** Goal: replace the
+network-throughput proxy (Spearman ~0.46) in Section 5 with a directly-measured
+Alibaba load index, without an arrival-sparsity caveat. Key design insight:
+lambda = occupancy/count (co-located containers, summed cpu_request), dense and
+noise-free, NOT an arrival flow (container "started" rows are heartbeats:
+368k rows / ~71k distinct containers; only 2,265 stops). Between-machine
+cross-section is primary (placement near-static -> within-machine fit not
+identifiable, pre-registered).
+
+**Result (599 machines): mean clause confirmed directly.** mu_logCPU rises with
+co-located container count at Spearman 0.40 (p=1.2e-24), decile Spearman 0.66,
+monotone, vs label-shuffle negative control |rho| p95 = 0.08. Design-alive
+invariant passed (free-smoke: Spearman(n_cont, meanCPU)=0.577). Summed
+cpu_request weaker (0.18) -- saturates above full provisioning (overcommit is
+nominal not realized load). sigma clause NOT claimed: between-machine sigma
+DECREASES with load (-0.31, a different construct); within-machine sigma(lambda)
+not identifiable (static placement); dispersion stays on the Fano index.
+
+Proxy-beating bar (within-machine sample-level Spearman >= 0.55) NOT met
+(within-machine lambda static), so the paper claims direct CONFIRMATION of the
+mean clause, not superiority over the proxy. New Section 5 paragraph added;
+paper rebuilds clean at 14 pages, 0 undefined macros.
+
 ## Cycle 2 (2026-08-31): macro-ize hardcoded numbers + de-circularize sigma cohort
 
 **Macro-ization (reviewer B5).** New scoping/build_mech_macros.py reads the
