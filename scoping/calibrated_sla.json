@@ -1,0 +1,122 @@
+{
+  "fastStorage": {
+    "raw_grand_median_availability": 0.9962335216572504,
+    "downtime_scale_s": 0.26549999999999746,
+    "AWS": {
+      "lognorm_ctop": {
+        "cal_availability_median": 0.9996876289640941,
+        "net_revenue_ratio": 0.9209523809523811
+      },
+      "empirical_p998": {
+        "cal_availability_median": 0.9985448059638302,
+        "net_revenue_ratio": 0.8776190476190479
+      },
+      "gauss_meanksd": {
+        "cal_availability_median": 0.9983795081967213,
+        "net_revenue_ratio": 0.8838095238095239
+      },
+      "rolling_max": {
+        "cal_availability_median": 0.999117784401391,
+        "net_revenue_ratio": 0.8835714285714288
+      }
+    },
+    "GCP": {
+      "lognorm_ctop": {
+        "cal_availability_median": 0.9996876289640941,
+        "net_revenue_ratio": 0.9280952380952383
+      },
+      "empirical_p998": {
+        "cal_availability_median": 0.9985448059638302,
+        "net_revenue_ratio": 0.8919047619047621
+      },
+      "gauss_meanksd": {
+        "cal_availability_median": 0.9983795081967213,
+        "net_revenue_ratio": 0.8980952380952382
+      },
+      "rolling_max": {
+        "cal_availability_median": 0.999117784401391,
+        "net_revenue_ratio": 0.897857142857143
+      }
+    }
+  },
+  "rnd": {
+    "raw_grand_median_availability": 0.9924422722495545,
+    "downtime_scale_s": 0.13231490112104857,
+    "AWS": {
+      "lognorm_ctop": {
+        "cal_availability_median": 0.9993193677925872,
+        "net_revenue_ratio": 0.9088235294117649
+      },
+      "empirical_p998": {
+        "cal_availability_median": 0.998856067137282,
+        "net_revenue_ratio": 0.8957013574660636
+      },
+      "gauss_meanksd": {
+        "cal_availability_median": 0.9985998423161794,
+        "net_revenue_ratio": 0.8918552036199098
+      },
+      "rolling_max": {
+        "cal_availability_median": 0.9992225916502876,
+        "net_revenue_ratio": 0.8988687782805431
+      }
+    },
+    "GCP": {
+      "lognorm_ctop": {
+        "cal_availability_median": 0.9993193677925872,
+        "net_revenue_ratio": 0.915610859728507
+      },
+      "empirical_p998": {
+        "cal_availability_median": 0.998856067137282,
+        "net_revenue_ratio": 0.8979638009049776
+      },
+      "gauss_meanksd": {
+        "cal_availability_median": 0.9985998423161794,
+        "net_revenue_ratio": 0.8986425339366518
+      },
+      "rolling_max": {
+        "cal_availability_median": 0.9992225916502876,
+        "net_revenue_ratio": 0.9011312217194571
+      }
+    }
+  },
+  "alibaba": {
+    "raw_grand_median_availability": 0.9919173062925619,
+    "downtime_scale_s": 0.12372113013261321,
+    "AWS": {
+      "lognorm_ctop": {
+        "cal_availability_median": 0.999182666605964,
+        "net_revenue_ratio": 0.89106529209622
+      },
+      "empirical_p998": {
+        "cal_availability_median": 0.9990096526539195,
+        "net_revenue_ratio": 0.8848797250859106
+      },
+      "gauss_meanksd": {
+        "cal_availability_median": 0.9975753727275989,
+        "net_revenue_ratio": 0.87766323024055
+      },
+      "rolling_max": {
+        "cal_availability_median": 0.9996669297134605,
+        "net_revenue_ratio": 0.9063573883161512
+      }
+    },
+    "GCP": {
+      "lognorm_ctop": {
+        "cal_availability_median": 0.999182666605964,
+        "net_revenue_ratio": 0.8927835051546392
+      },
+      "empirical_p998": {
+        "cal_availability_median": 0.9990096526539195,
+        "net_revenue_ratio": 0.8865979381443299
+      },
+      "gauss_meanksd": {
+        "cal_availability_median": 0.9975753727275989,
+        "net_revenue_ratio": 0.8793814432989693
+      },
+      "rolling_max": {
+        "cal_availability_median": 0.9996669297134605,
+        "net_revenue_ratio": 0.9080756013745704
+      }
+    }
+  }
+}

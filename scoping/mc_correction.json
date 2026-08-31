@@ -1,0 +1,11 @@
+{
+  "family_size": 14,
+  "n_significant_holm": 12,
+  "n_significant_bh": 13,
+  "fail_holm": [
+    "rnd:rolling_max",
+    "alibaba:empirical_p998"
+  ],
+  "min_p": 6.61722377282636e-65,
+  "max_p": 0.15606630199376767
+}

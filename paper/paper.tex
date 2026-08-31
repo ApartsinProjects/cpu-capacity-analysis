@@ -48,6 +48,8 @@
 \input{paper_macros_aligof}
 \input{paper_macros_frontcal}
 \input{paper_macros_diag}
+\input{paper_macros_mc}
+\input{paper_macros_calsla}
 
 \begin{document}
 \maketitle
@@ -1047,6 +1049,22 @@ service-success curve $\Ps(C)$, the event histogram $\Pe(E \mid T)$, and
 ARPE from the decision framework are not fitted; we report the schedule
 credit as the sole dollar-relevant quantity.
 
+\paragraph{Robustness to the operating regime.} Treating every
+above-ceiling sample as unavailable time places the raw availabilities,
+and hence the net-revenue figures, in the SLA penalty regime, where a
+convex step schedule could in principle reward over-provisioning for its
+own sake. To check that the method ranking is not an artefact of that
+regime, we recalibrate the unavailability by a single per-trace constant
+so the median method's availability lands in a realistic $0.999$ band and
+re-apply the schedules (\texttt{scoping/calibrated\_sla.py}); the
+transform is monotone and identical across methods. The ranking is
+unchanged. On fastStorage AWS the log-normal ceiling nets \CalSlaLn{}\%
+versus \CalSlaRm{}\% for the rolling maximum, \CalSlaGa{}\% Gaussian, and
+\CalSlaEp{}\% empirical percentile, and it leads on Rnd as well; on
+Alibaba the rolling maximum keeps its 10-second-resolution lead. The
+dollar ranking therefore tracks the sizing methods' tail behaviour, not
+the harshness of the availability mapping.
+
 The log-normal ceiling delivers the highest mean net revenue on
 fastStorage AWS, ahead of every baseline including the rolling maximum
 (\SlaFsLNAWSNet{}\% [\SlaFsLNAWSNetCiLo, \SlaFsLNAWSNetCiHi] vs.\
@@ -1069,7 +1087,20 @@ On Rnd AWS, log-normal and the rolling maximum are a statistical tie
 $p = 0.16$), while log-normal keeps
 a significant paired lead over the other four baselines ($p \leq 0.007$
 against \texttt{empirical\_p998}, smaller against the rest) under all
-three schedules. This is the coverage-vs-ceiling trade-off from
+three schedules.
+
+\paragraph{Multiple comparisons.} These paired tests form a family
+(\McFamily{} unique AWS comparisons: five baselines on each Bitbrains
+trace and four on Alibaba; GCP and Azure share the per-VM win counts).
+Controlling the family-wise error rate by Holm-Bonferroni leaves
+\McHolmN{} of \McFamily{} significant at $0.05$, and Benjamini-Hochberg
+FDR control leaves \McBHN{}; the only comparisons that do not survive are
+the Rnd rolling-maximum tie and the Alibaba empirical-percentile
+comparison, both already reported above as non-decisive. Every
+CI-separated or headline revenue claim in this section survives
+multiplicity correction.
+
+This is the coverage-vs-ceiling trade-off from
 Section~\ref{sec:sizing} priced in dollars: a method that covers more
 often keeps more revenue even when it carries a higher predicted
 ceiling, because SLA credits are step-shaped and the marginal cost of
