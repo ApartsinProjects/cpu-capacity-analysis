@@ -9,6 +9,28 @@ Paper draft target: *Performance Evaluation* (Elsevier). Core empirical result
 2 providers) is solid and macro-backed. Decision-layer sections (sizing, SLA) were
 Bitbrains-only. This session extends them to Alibaba and repairs integrity defects.
 
+## Cycle 4 (2026-08-31): Alibaba added to GoF tables + Autopilot positioning
+
+**Pairwise AIC + AD/CvM now cover all three traces (reviewer A8/A9).**
+- Pairwise AIC on Alibaba (from alibaba_fit_results.csv, 7,145 bins): LN vs
+  Normal median delta -195.0 (82.1% wins), vs Gamma -22.6 (63.6%), vs Weibull
+  -378.3 (89.8%). Gamma closest, matching Bitbrains ordering.
+- AD/CvM on Alibaba (new fit_alibaba_adcvm.py, same floor 5.0 / first 300
+  machines as the Alibaba AIC fit): log-normal smallest median on W^2 (1.25 vs
+  gamma 1.47) and A^2 (7.93 vs 9.41); CvM per-bin plurality 60.4%.
+- tab:pairwise restructured to Bitbrains|Alibaba panels; tab:advcm restructured
+  to W^2/A^2 x 3 traces (KS dropped from table, noted non-discriminating).
+  New macros via build_alibaba_gof_macros.py -> paper_macros_aligof.tex.
+
+**Related work: expanded Autopilot (Rzadca 2020) positioning.** Now describes
+its two recommender families (sliding-window/decaying-histogram percentile +
+ML) and the cost tradeoff, and contrasts precisely: Autopilot's percentile
+recommenders ARE the non-parametric running-quantile family our rolling_max /
+ewmq / empirical baselines instantiate; our parametric ceiling adds an explicit
+tunable confidence target and density-independent headroom, and Section 7
+quantifies where each wins (5-min match vs 10-s crossover). Paper 15 pages,
+0 undefined macros.
+
 ## Cycle 3 (2026-08-31): direct proxy-free load measurement (Fable-planned) of the mean clause
 
 **Fable planned the caveat-free protocol; executed here.** Goal: replace the

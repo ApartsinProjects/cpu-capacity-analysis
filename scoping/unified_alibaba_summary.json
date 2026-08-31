@@ -1,0 +1,46 @@
+{
+  "n_vms": 291,
+  "n_bins": 6961,
+  "lognorm_ctop": {
+    "mean_coverage": 0.9755845836076563,
+    "share_at_target": 0.6963080017238903,
+    "median_ceiling_pct": 74.23787664360432,
+    "median_rel_cost": 0.18944672324777465,
+    "n_valid": 6961
+  },
+  "empirical_p998": {
+    "mean_coverage": 0.9745976782404058,
+    "share_at_target": 0.5920126418618015,
+    "median_ceiling_pct": 71.92599999999993,
+    "median_rel_cost": 0.08666123336050148,
+    "n_valid": 6961
+  },
+  "gauss_meanksd": {
+    "mean_coverage": 0.9638176308008901,
+    "share_at_target": 0.42551357563568454,
+    "median_ceiling_pct": 64.3668286025162,
+    "median_rel_cost": 0.04674272550349165,
+    "n_valid": 6961
+  },
+  "rolling_max": {
+    "mean_coverage": 0.9803397757379547,
+    "share_at_target": 0.7688550495618446,
+    "median_ceiling_pct": 77.0,
+    "median_rel_cost": 0.17243351444093513,
+    "n_valid": 6961
+  },
+  "ml_gbm_p998": {
+    "mean_coverage": NaN,
+    "share_at_target": 0.0,
+    "median_ceiling_pct": NaN,
+    "median_rel_cost": NaN,
+    "n_valid": 0
+  },
+  "ewmq_p998": {
+    "mean_coverage": 0.9175402223921574,
+    "share_at_target": 0.09783077144088494,
+    "median_ceiling_pct": 56.465389144905295,
+    "median_rel_cost": -0.07394667819427868,
+    "n_valid": 6960
+  }
+}

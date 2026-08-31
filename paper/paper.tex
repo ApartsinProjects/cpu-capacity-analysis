@@ -45,6 +45,7 @@
 \input{paper_macros_alibaba}
 \input{paper_macros_mech}
 \input{paper_macros_direct}
+\input{paper_macros_aligof}
 
 \begin{document}
 \maketitle
@@ -225,11 +226,33 @@ that distribution. Autoscaling literature in cloud
 systems~\cite{gong2010press,wang2016data,bodik2009statistical} tends to
 forecast the mean and provision to a fixed percentile. AutoScale~\cite{gandhi2012autoscale}
 derives dynamic capacity for multi-tier services from queueing bounds
-rather than a fitted per-bin ceiling. Google's Autopilot~\cite{rzadca2020autopilot}
-is the closest deployed system to our per-bin fitted-ceiling approach:
-it uses running percentile statistics per container and does not attempt
-a parametric fit; we compare a log-normal ceiling against a rolling
-empirical percentile among our baselines. Quasar~\cite{delimitrou2014quasar}
+rather than a fitted per-bin ceiling.
+
+Google's Autopilot~\cite{rzadca2020autopilot} is the closest deployed
+system to the per-bin ceiling we study, and the contrast sharpens our
+contribution. Autopilot sets per-container CPU and memory limits from two
+families of recommender: a set of sliding-window rules over a
+time-decayed histogram of recent usage (a meta-algorithm picks the
+best-performing window and percentile), and a machine-learned
+recommender; both minimise a cost that trades provisioning slack against
+out-of-limit events. Its percentile recommenders are exactly the
+\emph{non-parametric running-quantile} family that our
+\texttt{rolling\_max}, \texttt{ewmq\_p998}, and \texttt{empirical\_p998}
+baselines instantiate: a ceiling read off recent observed usage with no
+distributional model. Our log-normal ceiling differs in kind. It is
+parametric: two fitted parameters per (host, hour) bin give an explicit,
+operator-tunable confidence target ($\exp\{\mu + k\sigma\}$ for a chosen
+$k$), and a headroom that does not drift with the observation window or
+the sampling density, whereas a running maximum or high percentile rises
+with the number of samples it has seen. Section~\ref{sec:sizing}
+quantifies the consequence on the same held-out panel: the parametric
+ceiling matches the running-quantile recommenders' coverage at
+5-minute production resolution while reserving 20 to 30 percent less
+headroom, and we identify precisely where the running maximum overtakes
+(10-second sampling dense enough for its maximum to act as a fixed high
+quantile). The two approaches are thus complementary, and the parametric
+ceiling contributes the confidence semantics and density-independence
+that a running quantile lacks. Quasar~\cite{delimitrou2014quasar}
 targets interference-aware provisioning at the cluster level with a
 classification model; orthogonal to the per-VM per-hour question we ask.
 
@@ -388,7 +411,9 @@ the best fit by AIC.
 \end{table}
 
 Pairwise AIC deltas (Table~\ref{tab:pairwise}) show that log-normal beats each
-alternative on a majority of bins by a substantial margin. The KS test
+alternative on a majority of bins by a substantial margin on both providers;
+gamma is the closest alternative on each, and the Bitbrains and Alibaba
+panels agree on the ordering. The KS test
 rejects every family at the 5\% level in most bins, the expected behaviour
 with fitted parameters and hundreds to thousands of samples per bin. All
 four families are rejected at similar rates, so KS does not discriminate
@@ -396,48 +421,56 @@ on this data and AIC is the informative comparison.
 
 To probe tail fit, which is what matters for a sizing method, we also
 compute the tail-sensitive Anderson-Darling ($A^2$) and Cram\'er-von Mises
-($W^2$) statistics per bin (Table~\ref{tab:advcm}). Log-normal has the
-smallest median statistic across all three tests on both traces, confirming
-that the AIC ranking is not an artefact of one likelihood-based measure;
-per-bin plurality of best-statistic remains with log-normal (\FsCvmShareLN{}\%
-of bins on fastStorage and \RnCvmShareLN{}\% on Rnd for $W^2$).
+($W^2$) statistics per bin (Table~\ref{tab:advcm}), on all three traces.
+Log-normal has the smallest median statistic on both statistics on every
+trace, confirming that the AIC ranking is not an artefact of one
+likelihood-based measure; per-bin plurality of best-$W^2$ statistic remains
+with log-normal (\FsCvmShareLN{}\% of bins on fastStorage, \RnCvmShareLN{}\%
+on Rnd, and \AliCvmShareLN{}\% on Alibaba).
 
 \begin{table}[t]
   \centering
   \small
   \begin{tabular}{lrrrrrr}
     \toprule
-    & \multicolumn{3}{c}{fastStorage} & \multicolumn{3}{c}{Rnd} \\
-    \cmidrule(lr){2-4}\cmidrule(lr){5-7}
-    Family     & KS         & $W^2$      & $A^2$      & KS         & $W^2$      & $A^2$ \\
+    & \multicolumn{2}{c}{fastStorage} & \multicolumn{2}{c}{Rnd} & \multicolumn{2}{c}{Alibaba} \\
+    \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+    Family     & $W^2$ & $A^2$ & $W^2$ & $A^2$ & $W^2$ & $A^2$ \\
     \midrule
-    Log-normal & \FsKSMedLN & \FsCvmMedLN & \FsAdMedLN & \RnKSMedLN & \RnCvmMedLN & \RnAdMedLN \\
-    Gamma      & \FsKSMedGa & \FsCvmMedGa & \FsAdMedGa & \RnKSMedGa & \RnCvmMedGa & \RnAdMedGa \\
-    Normal     & \FsKSMedNo & \FsCvmMedNo & \FsAdMedNo & \RnKSMedNo & \RnCvmMedNo & \RnAdMedNo \\
-    Weibull    & \FsKSMedWe & \FsCvmMedWe & \FsAdMedWe & \RnKSMedWe & \RnCvmMedWe & \RnAdMedWe \\
+    Log-normal & \FsCvmMedLN & \FsAdMedLN & \RnCvmMedLN & \RnAdMedLN & \AliCvmMedLN & \AliAdMedLN \\
+    Gamma      & \FsCvmMedGa & \FsAdMedGa & \RnCvmMedGa & \RnAdMedGa & \AliCvmMedGa & \AliAdMedGa \\
+    Normal     & \FsCvmMedNo & \FsAdMedNo & \RnCvmMedNo & \RnAdMedNo & \AliCvmMedNo & \AliAdMedNo \\
+    Weibull    & \FsCvmMedWe & \FsAdMedWe & \RnCvmMedWe & \RnAdMedWe & \AliCvmMedWe & \AliAdMedWe \\
     \bottomrule
   \end{tabular}
-  \caption{Median goodness-of-fit statistics per family across hourly bins.
-           Smaller is better. Log-normal wins on median on every test on
-           both traces.}
+  \caption{Median tail-sensitive goodness-of-fit statistics (Cram\'er-von
+           Mises $W^2$, Anderson-Darling $A^2$) per family across hourly
+           bins, on all three traces. Smaller is better. Log-normal wins
+           on median on both statistics on every trace. KS is omitted here
+           as non-discriminating with fitted parameters at these sample
+           sizes (medians in text).}
   \label{tab:advcm}
 \end{table}
 
 \begin{table}[t]
   \centering
   \small
-  \begin{tabular}{lrrr}
+  \begin{tabular}{lrrrrrr}
     \toprule
-    Comparison & Median AIC delta & Log-normal wins & Wins by $|\Delta| \geq 2$ \\
+    & \multicolumn{3}{c}{Bitbrains (\NBinsAll{} bins)} & \multicolumn{3}{c}{Alibaba (\AliBins{} bins)} \\
+    \cmidrule(lr){2-4}\cmidrule(lr){5-7}
+    Comparison & Med.\ $\Delta$ & LN wins & $|\Delta|\!\geq\!2$ & Med.\ $\Delta$ & LN wins & $|\Delta|\!\geq\!2$ \\
     \midrule
-    Log-normal vs.\ Normal    & \FsAicDeltaNorm{}      & \FsShareVsNorm{}\%    & \FsShareStrongVsNorm{}\% \\
-    Log-normal vs.\ Gamma     & \FsAicDeltaGamma{}     & \FsShareVsGamma{}\%   & \FsShareStrongVsGamma{}\% \\
-    Log-normal vs.\ Weibull   & \FsAicDeltaWeibull{}   & \FsShareVsWeibull{}\% & \FsShareStrongVsWeibull{}\% \\
+    LN vs.\ Normal  & \FsAicDeltaNorm{}    & \FsShareVsNorm{}\%    & \FsShareStrongVsNorm{}\%    & \AliAicDeltaNorm{}    & \AliShareVsNorm{}\%    & \AliShareStrongVsNorm{}\% \\
+    LN vs.\ Gamma   & \FsAicDeltaGamma{}   & \FsShareVsGamma{}\%   & \FsShareStrongVsGamma{}\%   & \AliAicDeltaGamma{}   & \AliShareVsGamma{}\%   & \AliShareStrongVsGamma{}\% \\
+    LN vs.\ Weibull & \FsAicDeltaWeibull{} & \FsShareVsWeibull{}\% & \FsShareStrongVsWeibull{}\% & \AliAicDeltaWeibull{} & \AliShareVsWeibull{}\% & \AliShareStrongVsWeibull{}\% \\
     \bottomrule
   \end{tabular}
-  \caption{Pairwise AIC comparison, pooled over the two Bitbrains traces
-           (\NBinsAll{} bins). Negative delta means log-normal has the
-           smaller (better) AIC.}
+  \caption{Pairwise AIC comparison: Bitbrains pooled over its two traces
+           (\NBinsAll{} bins) and Alibaba (\AliBins{} bins). Negative delta
+           means log-normal has the smaller (better) AIC. Log-normal wins
+           each pairwise comparison on a majority of bins on both providers;
+           gamma is the closest alternative on each.}
   \label{tab:pairwise}
 \end{table}
 
@@ -951,8 +984,8 @@ where these methods operate.
 Anderson-Darling and Cram\'er-von Mises tests are more sensitive to tail
 mismatch than KS and are appropriate when the goal is to certify that a fit
 is safe for tail-driven decisions like sizing. Table~\ref{tab:advcm}
-reports both statistics per family; log-normal has the smallest median on
-each. What remains for future work at these sample sizes is a bin-level
+reports both statistics per family on all three traces; log-normal has
+the smallest median on each. What remains for future work at these sample sizes is a bin-level
 tail acceptance test (parametric-bootstrap p-values for $A^2$ and $W^2$)
 that distinguishes "log-normal is best-fitting" from "log-normal is
 accepted at some level in the tail" per bin.

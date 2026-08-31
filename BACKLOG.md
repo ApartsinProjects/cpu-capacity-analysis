@@ -21,14 +21,14 @@
       proxy-selected 77%/92% (vs R^2-selected 96%/100%). Direction survives.
 
 ## P1
-- [ ] Add Alibaba to the pairwise-AIC (tab:pairwise) and AD/CvM (tab:advcm)
-      tables, or note explicitly they are Bitbrains-only (A8/A9).
+- [x] Add Alibaba to pairwise-AIC (tab:pairwise) and AD/CvM (tab:advcm) tables
+      (A8/A9). Both now 3-trace; log-normal wins median on every stat/trace.
+- [x] Expand Autopilot positioning (closest deployed competitor): its
+      percentile recommenders = our non-parametric running-quantile baselines;
+      parametric ceiling adds confidence target + density-independence.
 - [ ] Anchor / cite the "original industrial study" or drop the replication
       framing (Section 8 / verdict item 4).
-- [ ] Related-work expansion: Crovella-Bestavros, Harchol-Balter, AutoScale,
-      Autopilot, Quasar already cited; add explicit positioning vs Autopilot's
-      running-percentile ceiling (closest deployed competitor).
-- [ ] Paper length now 14 pages; tighten toward venue norm if needed.
+- [ ] Paper length now 15 pages; tighten toward venue norm if needed.
 
 ## P2 (method-improvement ideas; smoke before scale)
 - [ ] Direct-dispersion Section 5 on Alibaba: replace network proxy with real

@@ -1,0 +1,24 @@
+{
+  "n_bins": 7145,
+  "ks_median": {
+    "lognorm": 0.058,
+    "norm": 0.0832,
+    "gamma": 0.0618,
+    "weibull_min": 0.0928
+  },
+  "ks_share_lognorm_best": 0.6057,
+  "cvm_median": {
+    "lognorm": 1.2517,
+    "norm": 3.4001,
+    "gamma": 1.4712,
+    "weibull_min": 5.4551
+  },
+  "cvm_share_lognorm_best": 0.6039,
+  "ad_median": {
+    "lognorm": 7.9283,
+    "norm": 21.5096,
+    "gamma": 9.4081,
+    "weibull_min": 36.3089
+  },
+  "ad_share_lognorm_best": 0.6029
+}
